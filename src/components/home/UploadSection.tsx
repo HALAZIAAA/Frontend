@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getFileStatus, getRecentFiles, uploadFile } from '../../api/fileApi'
 import type { BackendFileListItemResponse, BackendFileStage } from '../../types/fileConverter'
 
@@ -47,6 +47,10 @@ const DEFAULT_STATE: ConversionState = {
 const POLLING_INTERVAL_MS = 1500
 const BACKEND_ORIGIN = 'http://localhost:8000'
 const STORAGE_KEY = 'file_converter_upload_state_v2'
+const DISMISSED_FAILED_FILE_IDS_KEY = 'file_converter_dismissed_failed_file_ids_v1'
+
+type ConvertedFileStatusLabel = '완료' | '변환 중' | '실패'
+type ConvertedFileStatusVariant = 'done' | 'processing' | 'failed'
 
 function getStageLabel(stage: BackendFileStage): string {
   const stageMap: Record<BackendFileStage, string> = {
@@ -110,13 +114,77 @@ function formatFileSize(sizeInBytes: number): string {
 
 function pickLatestItem(items: BackendFileListItemResponse[]): BackendFileListItemResponse | null {
   if (items.length === 0) return null
-  const sortedItems = [...items].sort((a, b) => {
+  const sortedItems = sortRecentFiles(items)
+  return sortedItems[0] ?? null
+}
+
+function sortRecentFiles(items: BackendFileListItemResponse[]): BackendFileListItemResponse[] {
+  return [...items].sort((a, b) => {
     const aTime = Date.parse(a.created_at)
     const bTime = Date.parse(b.created_at)
-    if (Number.isNaN(aTime) || Number.isNaN(bTime)) return 0
+    if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0
+    if (Number.isNaN(aTime)) return 1
+    if (Number.isNaN(bTime)) return -1
     return bTime - aTime
   })
-  return sortedItems[0] ?? null
+}
+
+function getConvertedFileStatusMeta(item: BackendFileListItemResponse): {
+  label: ConvertedFileStatusLabel
+  variant: ConvertedFileStatusVariant
+} {
+  if (item.status === 'failed' || item.current_stage === 'failed') {
+    return { label: '실패', variant: 'failed' }
+  }
+  if (item.status === 'done' && item.result_ready) {
+    return { label: '완료', variant: 'done' }
+  }
+  return { label: '변환 중', variant: 'processing' }
+}
+
+function formatRelativeCreatedAt(createdAt: string): string {
+  const createdAtTime = Date.parse(createdAt)
+  if (Number.isNaN(createdAtTime)) {
+    return '방금 전'
+  }
+
+  const diffMs = Date.now() - createdAtTime
+  if (diffMs < 60 * 1000) {
+    return '방금 전'
+  }
+
+  const diffMinutes = Math.floor(diffMs / (60 * 1000))
+  if (diffMinutes < 60) {
+    return `${Math.max(diffMinutes, 1)}분 전`
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60)
+  return `${Math.max(diffHours, 1)}시간 전`
+}
+
+function toDocxFileName(originalFileName: string): string {
+  return `${originalFileName.replace(/\.[^/.]+$/, '')}.docx`
+}
+
+async function downloadConvertedFile(downloadUrl: string, originalFileName: string): Promise<void> {
+  const absoluteDownloadUrl = downloadUrl.startsWith('http') ? downloadUrl : `${BACKEND_ORIGIN}${downloadUrl}`
+  const response = await fetch(absoluteDownloadUrl, {
+    method: 'GET',
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    throw new Error(`다운로드에 실패했습니다. (${response.status})`)
+  }
+
+  const blob = await response.blob()
+  const objectUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = objectUrl
+  link.download = toDocxFileName(originalFileName)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(objectUrl)
 }
 
 function toPersistedState(state: ConversionState): PersistedConversionState {
@@ -131,6 +199,36 @@ function toPersistedState(state: ConversionState): PersistedConversionState {
     errorMessage: state.errorMessage,
     errorUserMessage: state.errorUserMessage,
   }
+}
+
+function readDismissedFailedFileIds(): string[] {
+  try {
+    const raw = localStorage.getItem(DISMISSED_FAILED_FILE_IDS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    const validIds = parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    return Array.from(new Set(validIds))
+  } catch {
+    return []
+  }
+}
+
+function writeDismissedFailedFileIds(fileIds: string[]): void {
+  const uniqueIds = Array.from(new Set(fileIds.filter((fileId) => fileId.trim().length > 0)))
+  localStorage.setItem(DISMISSED_FAILED_FILE_IDS_KEY, JSON.stringify(uniqueIds))
+}
+
+function isFailedFileDismissed(fileId: string): boolean {
+  if (!fileId.trim()) return false
+  return readDismissedFailedFileIds().includes(fileId)
+}
+
+function dismissFailedFile(fileId: string): void {
+  if (!fileId.trim()) return
+  const dismissedIds = readDismissedFailedFileIds()
+  if (dismissedIds.includes(fileId)) return
+  writeDismissedFailedFileIds([...dismissedIds, fileId])
 }
 
 function readPersistedState(): PersistedConversionState | null {
@@ -162,8 +260,26 @@ function toConversionStateFromPersisted(persisted: PersistedConversionState): Co
 
 function UploadSection() {
   const [conversionState, setConversionState] = useState<ConversionState>(DEFAULT_STATE)
+  const [convertedFiles, setConvertedFiles] = useState<BackendFileListItemResponse[]>([])
+  const [isConvertedFilesLoading, setIsConvertedFilesLoading] = useState<boolean>(true)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const hasHydratedRef = useRef(false)
+  const hasLoadedListRef = useRef(false)
+
+  const refreshConvertedFiles = useCallback(async (): Promise<void> => {
+    if (!hasLoadedListRef.current) {
+      setIsConvertedFilesLoading(true)
+    }
+    try {
+      const recentItems = await getRecentFiles()
+      setConvertedFiles(sortRecentFiles(recentItems))
+    } catch {
+      // 목록 조회 실패 시 기존 목록을 유지한다.
+    } finally {
+      hasLoadedListRef.current = true
+      setIsConvertedFilesLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     let isCancelled = false
@@ -174,6 +290,9 @@ function UploadSection() {
       try {
         const recentItems = await getRecentFiles()
         if (isCancelled) return
+        setConvertedFiles(sortRecentFiles(recentItems))
+        hasLoadedListRef.current = true
+        setIsConvertedFilesLoading(false)
 
         const latestItem = pickLatestItem(recentItems)
         if (latestItem) {
@@ -192,6 +311,12 @@ function UploadSection() {
           }
 
           if (latestItem.status === 'failed' || latestItem.current_stage === 'failed') {
+            if (isFailedFileDismissed(latestItem.file_id)) {
+              setConversionState(DEFAULT_STATE)
+              hasHydratedRef.current = true
+              return
+            }
+
             let detailedErrorMessage =
               persistedFallback?.errorMessage ?? 'PIPELINE_FAILED: 변환 처리 중 오류가 발생했습니다.'
 
@@ -239,9 +364,13 @@ function UploadSection() {
         }
       } catch {
         // 서버 복구 실패 시 localStorage fallback으로 진행한다.
+        setIsConvertedFilesLoading(false)
       }
 
-      if (persistedFallback) {
+      if (
+        persistedFallback &&
+        !(persistedFallback.status === 'error' && isFailedFileDismissed(persistedFallback.fileId))
+      ) {
         setConversionState(toConversionStateFromPersisted(persistedFallback))
       }
       hasHydratedRef.current = true
@@ -271,6 +400,7 @@ function UploadSection() {
       try {
         const response = await getFileStatus(conversionState.fileId)
         if (isCancelled) return
+        void refreshConvertedFiles()
 
         setConversionState((prevState) => {
           if (response.status === 'failed' || response.current_stage === 'failed') {
@@ -341,7 +471,14 @@ function UploadSection() {
       isCancelled = true
       window.clearInterval(intervalId)
     }
-  }, [conversionState.status, conversionState.fileId])
+  }, [conversionState.status, conversionState.fileId, refreshConvertedFiles])
+
+  useEffect(() => {
+    if (!hasHydratedRef.current) return
+    if (conversionState.status === 'success' || conversionState.status === 'error') {
+      void refreshConvertedFiles()
+    }
+  }, [conversionState.status, refreshConvertedFiles])
 
   const handleSelectButtonClick = (): void => {
     fileInputRef.current?.click()
@@ -407,6 +544,9 @@ function UploadSection() {
   }
 
   const handleReset = (): void => {
+    if (conversionState.status === 'error' && conversionState.fileId) {
+      dismissFailedFile(conversionState.fileId)
+    }
     setConversionState(DEFAULT_STATE)
     localStorage.removeItem(STORAGE_KEY)
     if (fileInputRef.current) {
@@ -418,26 +558,7 @@ function UploadSection() {
     if (!conversionState.downloadUrl) return
 
     try {
-      const absoluteDownloadUrl = conversionState.downloadUrl.startsWith('http')
-        ? conversionState.downloadUrl
-        : `${BACKEND_ORIGIN}${conversionState.downloadUrl}`
-      const response = await fetch(absoluteDownloadUrl, {
-        method: 'GET',
-        credentials: 'include',
-      })
-      if (!response.ok) {
-        throw new Error(`다운로드에 실패했습니다. (${response.status})`)
-      }
-
-      const blob = await response.blob()
-      const objectUrl = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = objectUrl
-      link.download = `${conversionState.fileName.replace(/\.[^/.]+$/, '')}.docx`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(objectUrl)
+      await downloadConvertedFile(conversionState.downloadUrl, conversionState.fileName)
     } catch (error) {
       const message = error instanceof Error ? error.message : '다운로드 중 오류가 발생했습니다.'
       setConversionState((prevState) => ({
@@ -449,6 +570,29 @@ function UploadSection() {
         errorUserMessage: '다운로드 중 오류가 발생했습니다.',
       }))
     }
+  }
+
+  const handleListItemDownload = async (item: BackendFileListItemResponse): Promise<void> => {
+    if (!item.download_url) return
+
+    try {
+      await downloadConvertedFile(item.download_url, item.original_name)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '다운로드 중 오류가 발생했습니다.'
+      setConversionState((prevState) => ({
+        ...prevState,
+        status: 'error',
+        currentStage: 'failed',
+        progress: prevState.progress,
+        errorMessage: message,
+        errorUserMessage: '다운로드 중 오류가 발생했습니다.',
+      }))
+    }
+  }
+
+  const handleListItemDelete = (fileId: string): void => {
+    // TODO: 백엔드 삭제 API가 추가되면 이 핸들러에서 서버 삭제를 먼저 호출한다.
+    setConvertedFiles((prevItems) => prevItems.filter((item) => item.file_id !== fileId))
   }
 
   return (
@@ -583,6 +727,93 @@ function UploadSection() {
               </button>
             </div>
           </div>
+        )}
+      </div>
+
+      <div className="converted-file-list-card" aria-labelledby="converted-file-list-title">
+        <h3 id="converted-file-list-title" className="converted-file-list-title">
+          변환된 파일 목록
+        </h3>
+
+        {isConvertedFilesLoading ? (
+          <p className="converted-file-list-empty">목록을 불러오는 중...</p>
+        ) : convertedFiles.length === 0 ? (
+          <p className="converted-file-list-empty">아직 변환된 파일이 없습니다.</p>
+        ) : (
+          <ul className="converted-file-list" aria-label="변환된 파일 목록">
+            {convertedFiles.map((item) => {
+              const statusMeta = getConvertedFileStatusMeta(item)
+              const isDownloadEnabled = Boolean(item.download_url)
+              return (
+                <li key={item.file_id} className="converted-file-list-item">
+                  <div className="converted-file-main">
+                    <div className="converted-file-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                          d="M7 3H14L19 8V20C19 20.55 18.55 21 18 21H7C6.45 21 6 20.55 6 20V4C6 3.45 6.45 3 7 3Z"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path d="M14 3V8H19" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                      </svg>
+                    </div>
+
+                    <div className="converted-file-text">
+                      <p className="converted-file-name">{item.original_name}</p>
+                      <div className="converted-file-meta-row">
+                        <span className="converted-file-format">PDF → DOCX</span>
+                        <span className="converted-file-time">{formatRelativeCreatedAt(item.created_at)}</span>
+                        <span className={`converted-file-status-badge is-${statusMeta.variant}`}>{statusMeta.label}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="converted-file-actions">
+                    <button
+                      type="button"
+                      className="converted-file-action-button"
+                      aria-label={`${item.original_name} 다운로드`}
+                      disabled={!isDownloadEnabled}
+                      onClick={() => {
+                        void handleListItemDownload(item)
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path
+                          d="M12 4V14M12 14L8 10M12 14L16 10M5 17V19C5 19.55 5.45 20 6 20H18C18.55 20 19 19.55 19 19V17"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="converted-file-action-button danger"
+                      aria-label={`${item.original_name} 목록에서 삭제`}
+                      onClick={() => {
+                        handleListItemDelete(item.file_id)
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path
+                          d="M4 7H20M9 7V5.5C9 4.67 9.67 4 10.5 4H13.5C14.33 4 15 4.67 15 5.5V7M18 7L17.2 19.2C17.16 19.67 16.77 20.03 16.3 20.03H7.7C7.23 20.03 6.84 19.67 6.8 19.2L6 7M10 11V17M14 11V17"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
         )}
       </div>
     </section>
