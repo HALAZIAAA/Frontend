@@ -1,0 +1,354 @@
+.post-detail-page {
+  min-height: 100vh;
+  background-color: #f3f4f6;
+}
+
+.post-detail-main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+}
+
+.post-detail-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #6b7280;
+  font-size: 0.9rem;
+  text-decoration: none;
+  margin-bottom: 24px;
+}
+
+.post-detail-back-link:hover {
+  color: #374151;
+}
+
+.post-detail-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.post-detail-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.post-detail-category-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.post-detail-category-badge.question {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+.post-detail-category-badge.tip {
+  background-color: #f0fdf4;
+  color: #15803d;
+}
+
+.post-detail-category-badge.notice {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+.post-detail-category-badge.review {
+  background-color: #f5f3ff;
+  color: #6d28d9;
+}
+
+.post-detail-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.post-detail-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.post-detail-action-button.edit {
+  border: 1px solid #2563eb;
+  color: #2563eb;
+}
+
+.post-detail-action-button.edit:hover {
+  background-color: #eff6ff;
+}
+
+.post-detail-action-button.delete {
+  border: 1px solid #dc2626;
+  color: #dc2626;
+}
+
+.post-detail-action-button.delete:hover {
+  background-color: #fef2f2;
+}
+
+.post-detail-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 10px;
+}
+
+.post-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-bottom: 20px;
+}
+
+.post-detail-meta-stats {
+  display: flex;
+  gap: 10px;
+}
+
+.post-detail-action-bar {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.post-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.post-action-button.like {
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  color: #374151;
+}
+
+.post-action-button.like:hover {
+  background-color: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.post-action-button.comment {
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  color: #374151;
+}
+
+.post-action-button.comment:hover,
+.post-action-button.comment.active {
+  background-color: #eff6ff;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.post-detail-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+}
+
+.post-detail-content {
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.comment-section {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 28px 32px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.comment-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 20px;
+}
+
+.comment-count-accent {
+  color: #2563eb;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.comment-item {
+  padding: 16px 0;
+}
+
+.comment-item + .comment-item {
+  border-top: 1px solid #e5e7eb;
+}
+
+.comment-item-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.comment-author {
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.9rem;
+}
+
+.comment-date {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.comment-content {
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+}
+
+.comment-action-button {
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.comment-reply-box {
+  margin-top: 10px;
+}
+
+.comment-reply-textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.comment-reply-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.comment-reply-cancel-button,
+.comment-reply-submit-button,
+.comment-submit-button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.comment-reply-cancel-button {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.comment-reply-submit-button,
+.comment-submit-button {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.comment-new-box {
+  margin-top: 16px;
+}
+
+.comment-new-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.comment-new-textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.post-detail-not-found {
+  padding: 60px 0;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.95rem;
+}
+
+.post-detail-not-found a {
+  display: inline-block;
+  margin-top: 12px;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+@media (max-width: 640px) {
+  .post-detail-main {
+    padding-top: 24px;
+  }
+
+  .post-detail-card {
+    padding: 20px;
+  }
+
+  .comment-section {
+    padding: 20px;
+  }
+
+  .post-detail-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}

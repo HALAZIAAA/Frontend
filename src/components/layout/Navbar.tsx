@@ -21,8 +21,12 @@ function Navbar({ menuItems, loginLabel = '로그인' }: NavbarProps) {
         <ul className="navbar-menu-list">
           {menuItems.map((item) => (
             <li key={item} className="navbar-menu-item">
-              {item === '파일 변환' ? (
-                <Link to="/" className="navbar-menu-button" aria-label="파일 변환 페이지로 이동">
+              {item === '파일 변환' || item === '커뮤니티' ? (
+                <Link
+                  to={item === '파일 변환' ? '/' : '/community'}
+                  className="navbar-menu-button"
+                  aria-label={item === '파일 변환' ? '파일 변환 페이지로 이동' : '커뮤니티 페이지로 이동'}
+                >
                   {item}
                 </Link>
               ) : (
