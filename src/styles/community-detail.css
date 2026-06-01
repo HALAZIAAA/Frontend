@@ -14,7 +14,7 @@
   align-items: center;
   gap: 4px;
   color: #6b7280;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   text-decoration: none;
   margin-bottom: 24px;
 }
@@ -44,7 +44,7 @@
   justify-content: center;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.98rem;
   font-weight: 600;
 }
 
@@ -80,7 +80,7 @@
   padding: 6px 12px;
   border-radius: 8px;
   background-color: #ffffff;
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.12s ease;
@@ -105,7 +105,7 @@
 }
 
 .post-detail-title {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: #111827;
   margin-bottom: 10px;
@@ -116,7 +116,7 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   color: #9ca3af;
   margin-bottom: 20px;
 }
@@ -140,7 +140,7 @@
   gap: 6px;
   padding: 8px 18px;
   border-radius: 999px;
-  font-size: 0.88rem;
+  font-size: 1.08rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.12s ease, border-color 0.12s ease;
@@ -178,7 +178,7 @@
 }
 
 .post-detail-content {
-  font-size: 0.95rem;
+  font-size: 1.15rem;
   color: #374151;
   line-height: 1.75;
   white-space: pre-wrap;
@@ -192,7 +192,7 @@
 }
 
 .comment-section-title {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #111827;
   margin-bottom: 20px;
@@ -225,16 +225,16 @@
 .comment-author {
   font-weight: 700;
   color: #111827;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
 }
 
 .comment-date {
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   color: #9ca3af;
 }
 
 .comment-content {
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   color: #374151;
   line-height: 1.6;
 }
@@ -243,7 +243,7 @@
   display: flex;
   gap: 10px;
   margin-top: 8px;
-  font-size: 0.8rem;
+  font-size: 1.0rem;
 }
 
 .comment-action-button {
@@ -264,7 +264,7 @@
   border-radius: 8px;
   border: 1px solid #e5e7eb;
   padding: 8px 10px;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   resize: vertical;
   min-height: 80px;
 }
@@ -282,7 +282,7 @@
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   cursor: pointer;
 }
 
@@ -314,7 +314,7 @@
   border-radius: 8px;
   border: 1px solid #e5e7eb;
   padding: 10px 12px;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   resize: vertical;
   min-height: 100px;
 }
@@ -323,7 +323,7 @@
   padding: 60px 0;
   text-align: center;
   color: #9ca3af;
-  font-size: 0.95rem;
+  font-size: 1.15rem;
 }
 
 .post-detail-not-found a {

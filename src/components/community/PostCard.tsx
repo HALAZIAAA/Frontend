@@ -34,7 +34,6 @@ function PostCard({ post }: PostCardProps) {
     <article className="post-card" onClick={handleClick}>
       <div className="post-card-top">
         <span className={getCategoryBadgeClass(post.category)}>{post.category}</span>
-        {post.isHot && <span className="post-card-hot-badge">🔥 HOT</span>}
       </div>
 
       <div className="post-card-middle">

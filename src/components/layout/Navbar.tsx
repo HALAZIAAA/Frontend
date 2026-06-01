@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import BridgeOnLogo from '../../assets/BridgeOnLogo.png'
 
 type NavbarProps = {
   menuItems: string[]
@@ -11,10 +12,8 @@ function Navbar({ menuItems, loginLabel = '로그인' }: NavbarProps) {
       <nav className="navbar-container" aria-label="주요 메뉴">
         <div className="navbar-logo-area">
           <Link className="navbar-logo-link" to="/" aria-label="FileConverter 홈으로 이동">
-            <span className="navbar-logo-mark" aria-hidden="true">
-              FC
-            </span>
-            <span className="navbar-logo-text">FileConverter</span>
+            <img src={BridgeOnLogo} alt="BridgeOn 로고" className="navbar-logo-image" />
+            <span className="navbar-logo-text">BridgeOn</span>
           </Link>
         </div>
 

@@ -51,7 +51,6 @@ function CommunityPage() {
       <Navbar menuItems={['파일 변환', '커뮤니티']} />
 
       <main className="community-main">
-        <h1 className="community-title">커뮤니티</h1>
 
         <section className="community-filter-card" aria-label="커뮤니티 필터 및 검색">
           <div className="community-category-tabs" role="tablist" aria-label="게시글 카테고리">
@@ -94,7 +93,6 @@ function CommunityPage() {
             </select>
 
             <Link to="/community/write" className="community-write-button">
-              <span className="community-write-button-icon">✏</span>
               글쓰기
             </Link>
           </div>
