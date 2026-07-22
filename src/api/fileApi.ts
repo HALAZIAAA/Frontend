@@ -4,7 +4,11 @@ import type {
   BackendFileStatusResponse,
 } from '../types/fileConverter'
 
-const API_BASE = 'http://localhost:8000/api/v1/files'
+// 백엔드 주소는 front/.env 의 VITE_BACKEND_ORIGIN 으로 설정 (미설정 시 localhost:8000)
+export const BACKEND_ORIGIN: string =
+  import.meta.env.VITE_BACKEND_ORIGIN ?? 'http://localhost:8000'
+
+const API_BASE = `${BACKEND_ORIGIN}/api/v1/files`
 
 async function parseErrorResponse(response: Response): Promise<string> {
   try {

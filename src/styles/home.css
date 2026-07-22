@@ -400,6 +400,54 @@
   width: min(100%, 640px);
 }
 
+/* [DEMO] 슬라이드 이미지 스타일 — 백엔드 연결 시 삭제 */
+.demo-slide-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.demo-slide-container {
+  position: relative;
+  width: 220px;
+  height: 160px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.demo-slide-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.demo-slide-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, #3b82f6 50%, transparent 100%);
+  box-shadow: 0 0 8px #3b82f6;
+  animation: demo-scan 1.6s ease-in-out infinite;
+}
+
+.demo-slide-label {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+@keyframes demo-scan {
+  0%   { top: 0%; opacity: 1; }
+  90%  { top: 100%; opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+/* [DEMO] end */
+
 .progress-spinner {
   width: 3rem;
   height: 3rem;

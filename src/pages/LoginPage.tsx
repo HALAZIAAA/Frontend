@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/auth/AuthLayout'
 import AuthDivider from '../components/auth/AuthDivider'
 import SocialLoginButton from '../components/auth/SocialLoginButton'
+import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
 import '../styles/auth.css'
 
@@ -18,6 +19,8 @@ type LoginFormErrors = {
 }
 
 function LoginPage() {
+  const { login } = useAuth()
+  const navigate = useNavigate()
   const [formState, setFormState] = useState<LoginFormState>({
     email: '',
     password: '',
@@ -66,8 +69,12 @@ function LoginPage() {
       return
     }
 
-    // TODO: 추후 백엔드 일반 로그인 API가 추가되면 여기에서 실제 로그인 요청을 연결한다.
-    setSubmitMessage('현재는 프론트 UI만 구현된 상태입니다.')
+    const success = login(formState.email, formState.password)
+    if (success) {
+      navigate('/')
+    } else {
+      setSubmitMessage('이메일 또는 비밀번호가 올바르지 않습니다.')
+    }
   }
 
   const handleGoogleLogin = (): void => {

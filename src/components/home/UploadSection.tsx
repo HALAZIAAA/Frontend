@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getFileStatus, getRecentFiles, uploadFile } from '../../api/fileApi'
+// [DEMO] 데모 복원 시 아래 fileApi import 를 주석 처리하고 fileMockApi import 주석 해제
+// import { getFileStatus, getRecentFiles, uploadFile } from '../../api/fileMockApi'
+import { BACKEND_ORIGIN, getFileStatus, getRecentFiles, uploadFile } from '../../api/fileApi'
+// [DEMO] 슬라이드 이미지 — 데모 복원 시 주석 해제
+// import { DEMO_SLIDES } from '../../lib/demoSlides'
 import type { BackendFileListItemResponse, BackendFileStage } from '../../types/fileConverter'
 
 type ConversionStatus = 'idle' | 'file_selected' | 'converting' | 'success' | 'error'
@@ -45,7 +49,6 @@ const DEFAULT_STATE: ConversionState = {
 }
 
 const POLLING_INTERVAL_MS = 1500
-const BACKEND_ORIGIN = 'http://localhost:8000'
 const STORAGE_KEY = 'file_converter_upload_state_v2'
 const DISMISSED_FAILED_FILE_IDS_KEY = 'file_converter_dismissed_failed_file_ids_v1'
 
@@ -167,6 +170,17 @@ function toDocxFileName(originalFileName: string): string {
 }
 
 async function downloadConvertedFile(downloadUrl: string, originalFileName: string): Promise<void> {
+  // [DEMO] Blob URL 직접 다운로드 — 데모 복원 시 주석 해제
+  // if (downloadUrl.startsWith('blob:')) {
+  //   const link = document.createElement('a')
+  //   link.href = downloadUrl
+  //   link.download = toDocxFileName(originalFileName)
+  //   document.body.appendChild(link)
+  //   link.click()
+  //   link.remove()
+  //   return
+  // }
+  // [REAL] 백엔드 다운로드
   const absoluteDownloadUrl = downloadUrl.startsWith('http') ? downloadUrl : `${BACKEND_ORIGIN}${downloadUrl}`
   const response = await fetch(absoluteDownloadUrl, {
     method: 'GET',
@@ -670,7 +684,34 @@ function UploadSection() {
 
         {conversionState.status === 'converting' && (
           <div className="upload-panel-group upload-panel-converting">
+            {/* [DEMO] describing 단계 슬라이드 표시 — 데모 복원 시 아래 주석 해제하고 스피너 줄 삭제
+            {conversionState.currentStage === 'describing' ? (() => {
+              const progressPerSlide = 60 / DEMO_SLIDES.length
+              const slideIndex = Math.min(
+                Math.max(Math.floor((conversionState.progress - 20) / progressPerSlide), 0),
+                DEMO_SLIDES.length - 1,
+              )
+              return (
+                <div className="demo-slide-wrapper">
+                  <div className="demo-slide-container">
+                    <img
+                      src={DEMO_SLIDES[slideIndex]}
+                      alt={`분석 중인 이미지 ${slideIndex + 1}`}
+                      className="demo-slide-img"
+                    />
+                    <div className="demo-slide-scan-line" />
+                  </div>
+                  <p className="demo-slide-label">
+                    이미지 {slideIndex + 1} / {DEMO_SLIDES.length} 분석 중...
+                  </p>
+                </div>
+              )
+            })() : (
+              <div className="progress-spinner" aria-hidden="true" />
+            )}
+            [DEMO] end */}
             <div className="progress-spinner" aria-hidden="true" />
+
             <h2 className="upload-box-title">변환 중...</h2>
             <p className="upload-box-support-text">{conversionState.fileName} 파일을 변환하고 있습니다.</p>
 

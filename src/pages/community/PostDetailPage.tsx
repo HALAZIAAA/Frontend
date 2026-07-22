@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
 import { addComment, deletePost, getPost, likeComment, likePost } from '../../api/communityApi'
+import { CURRENT_USER } from '../../lib/currentUser'
 import type { Comment, Post } from '../../types/community'
 import '../../styles/navbar.css'
 import '../../styles/community-detail.css'
@@ -74,7 +75,7 @@ function PostDetailPage() {
     const updated = addComment({
       postId: numericId,
       content: newComment.trim(),
-      author: '나',
+      author: CURRENT_USER.name,
       parentId: null,
     })
     if (updated) {
@@ -98,7 +99,7 @@ function PostDetailPage() {
     const updated = addComment({
       postId: numericId,
       content: replyContent.trim(),
-      author: '나',
+      author: CURRENT_USER.name,
       parentId: replyTargetId,
     })
     if (updated) {

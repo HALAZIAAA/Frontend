@@ -75,7 +75,31 @@
 .navbar-action-area {
   display: inline-flex;
   align-items: center;
+  gap: 0.75rem;
   flex-shrink: 0;
+}
+
+.navbar-user-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.navbar-logout-button {
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.55rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.navbar-logout-button:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
 }
 
 .navbar-login-button {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
 import { createPost } from '../../api/communityApi'
+import { CURRENT_USER } from '../../lib/currentUser'
 import type { PostCategory } from '../../types/community'
 import '../../styles/community-write.css'
 
@@ -26,7 +27,7 @@ function PostWritePage() {
       title: title.trim(),
       category,
       content: content.trim(),
-      author: '나',
+      author: CURRENT_USER.name,
     })
 
     navigate('/community')

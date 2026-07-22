@@ -1,17 +1,25 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import BridgeOnLogo from '../../assets/BridgeOnLogo.png'
+import { useAuth } from '../../lib/auth'
 
 type NavbarProps = {
   menuItems: string[]
-  loginLabel?: string
 }
 
-function Navbar({ menuItems, loginLabel = '로그인' }: NavbarProps) {
+function Navbar({ menuItems }: NavbarProps) {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
+
   return (
     <header className="navbar-wrapper">
       <nav className="navbar-container" aria-label="주요 메뉴">
         <div className="navbar-logo-area">
-          <Link className="navbar-logo-link" to="/" aria-label="FileConverter 홈으로 이동">
+          <Link className="navbar-logo-link" to="/" aria-label="BridgeOn 홈으로 이동">
             <img src={BridgeOnLogo} alt="BridgeOn 로고" className="navbar-logo-image" />
             <span className="navbar-logo-text">BridgeOn</span>
           </Link>
@@ -38,9 +46,18 @@ function Navbar({ menuItems, loginLabel = '로그인' }: NavbarProps) {
         </ul>
 
         <div className="navbar-action-area">
-          <Link to="/login" className="navbar-login-button" aria-label="로그인 페이지로 이동">
-            {loginLabel}
-          </Link>
+          {user ? (
+            <>
+              <span className="navbar-user-name">{user.name}</span>
+              <button type="button" className="navbar-logout-button" onClick={handleLogout}>
+                로그아웃
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="navbar-login-button" aria-label="로그인 페이지로 이동">
+              로그인
+            </Link>
+          )}
         </div>
       </nav>
     </header>
