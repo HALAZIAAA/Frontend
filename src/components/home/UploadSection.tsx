@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 // [DEMO] 데모 복원 시 아래 fileApi import 를 주석 처리하고 fileMockApi import 주석 해제
 // import { getFileStatus, getRecentFiles, uploadFile } from '../../api/fileMockApi'
-import { BACKEND_ORIGIN, getFileStatus, getRecentFiles, uploadFile } from '../../api/fileApi'
+import { BACKEND_ORIGIN, deleteFile, getFileStatus, getRecentFiles, uploadFile } from '../../api/fileApi'
+import { useAuth } from '../../lib/auth'
 // [DEMO] 슬라이드 이미지 — 데모 복원 시 주석 해제
 // import { DEMO_SLIDES } from '../../lib/demoSlides'
 import type { BackendFileListItemResponse, BackendFileStage } from '../../types/fileConverter'
@@ -54,6 +55,9 @@ const DISMISSED_FAILED_FILE_IDS_KEY = 'file_converter_dismissed_failed_file_ids_
 // 사용자가 명시적 액션(다운로드 / 새 파일 변환)으로 "확인"한 완료 건의 file_id 목록.
 // 이 목록에 있는 완료 건은 재진입/새로고침 시 완료 화면 대신 업로드 화면을 보여준다.
 const ACKNOWLEDGED_DONE_FILE_IDS_KEY = 'file_converter_acknowledged_done_file_ids_v1'
+// 이 "탭"에서 방금 완료된(아직 다운로드/확인 안 한) 파일 id. sessionStorage라 탭별로 분리되고,
+// 새 탭/새 창/다른 브라우저에서는 비어 있다. 완료 화면을 "그 탭에서만" 복원하는 데 쓴다.
+const SESSION_COMPLETION_FILE_ID_KEY = 'file_converter_session_completion_file_id_v1'
 
 type ConvertedFileStatusLabel = '완료' | '변환 중' | '실패'
 type ConvertedFileStatusVariant = 'done' | 'processing' | 'failed'
@@ -278,6 +282,31 @@ function acknowledgeDoneFile(fileId: string): void {
   writeAcknowledgedDoneFileIds([...acknowledgedIds, fileId])
 }
 
+function readSessionCompletionFileId(): string | null {
+  try {
+    return sessionStorage.getItem(SESSION_COMPLETION_FILE_ID_KEY)
+  } catch {
+    return null
+  }
+}
+
+function markSessionCompletion(fileId: string): void {
+  if (!fileId.trim()) return
+  try {
+    sessionStorage.setItem(SESSION_COMPLETION_FILE_ID_KEY, fileId)
+  } catch {
+    // sessionStorage 사용 불가 환경은 무시한다.
+  }
+}
+
+function clearSessionCompletion(): void {
+  try {
+    sessionStorage.removeItem(SESSION_COMPLETION_FILE_ID_KEY)
+  } catch {
+    // 무시
+  }
+}
+
 function readPersistedState(): PersistedConversionState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -306,12 +335,14 @@ function toConversionStateFromPersisted(persisted: PersistedConversionState): Co
 }
 
 function UploadSection() {
+  const { user } = useAuth()
   const [conversionState, setConversionState] = useState<ConversionState>(DEFAULT_STATE)
   const [convertedFiles, setConvertedFiles] = useState<BackendFileListItemResponse[]>([])
   const [isConvertedFilesLoading, setIsConvertedFilesLoading] = useState<boolean>(true)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const hasHydratedRef = useRef(false)
   const hasLoadedListRef = useRef(false)
+  const prevUserIdRef = useRef<number | null | undefined>(undefined)
 
   const refreshConvertedFiles = useCallback(async (): Promise<void> => {
     if (!hasLoadedListRef.current) {
@@ -344,9 +375,13 @@ function UploadSection() {
         const latestItem = pickLatestItem(recentItems)
         if (latestItem) {
           if (latestItem.status === 'done' && latestItem.result_ready) {
-            // 사용자가 이미 명시적 액션으로 확인한 완료 건이면
-            // 완료 화면을 다시 띄우지 않고 업로드 화면을 보여준다.
-            if (isDoneFileAcknowledged(latestItem.file_id)) {
+            // 완료 화면은 "이 탭에서 방금 변환한" 경우에만 복원한다.
+            // 새 탭/새 창/다른 브라우저에서는 sessionStorage가 비어 있어 업로드 화면을 보여준다.
+            const isThisTabCompletion =
+              readSessionCompletionFileId() === latestItem.file_id
+
+            // 이미 확인한 완료 건이거나, 이 탭에서 만든 완료가 아니면 업로드 화면.
+            if (isDoneFileAcknowledged(latestItem.file_id) || !isThisTabCompletion) {
               setConversionState(DEFAULT_STATE)
               hasHydratedRef.current = true
               return
@@ -539,6 +574,32 @@ function UploadSection() {
     }
   }, [conversionState.status, refreshConvertedFiles])
 
+  // 이 탭에서 변환이 완료되면, 완료 화면을 이 탭에서만 복원할 수 있도록 표시를 남긴다.
+  useEffect(() => {
+    if (!hasHydratedRef.current) return
+    if (conversionState.status === 'success' && conversionState.fileId) {
+      markSessionCompletion(conversionState.fileId)
+    }
+  }, [conversionState.status, conversionState.fileId])
+
+  // 로그인/로그아웃 시 목록을 갱신하고, 로그아웃되면 화면을 업로드 화면으로 초기화한다.
+  useEffect(() => {
+    const prevUserId = prevUserIdRef.current
+    const currentUserId = user ? user.id : null
+    prevUserIdRef.current = currentUserId
+
+    if (prevUserId === undefined) return // 최초 마운트는 건너뛴다.
+    if (prevUserId === currentUserId) return // 실제 변화 없음.
+
+    void refreshConvertedFiles()
+
+    if (currentUserId === null) {
+      // 로그아웃: 완료/변환 화면을 초기화하고 이 탭의 완료 표시를 지운다.
+      clearSessionCompletion()
+      setConversionState(DEFAULT_STATE)
+    }
+  }, [user, refreshConvertedFiles])
+
   const handleSelectButtonClick = (): void => {
     fileInputRef.current?.click()
   }
@@ -610,6 +671,7 @@ function UploadSection() {
     if (conversionState.status === 'success' && conversionState.fileId) {
       acknowledgeDoneFile(conversionState.fileId)
     }
+    clearSessionCompletion()
     setConversionState(DEFAULT_STATE)
     localStorage.removeItem(STORAGE_KEY)
     if (fileInputRef.current) {
@@ -622,6 +684,7 @@ function UploadSection() {
 
     // 다운로드는 완료 건을 확인한 명시적 액션이므로 재진입 시 완료 화면을 다시 띄우지 않는다.
     acknowledgeDoneFile(conversionState.fileId)
+    clearSessionCompletion()
 
     try {
       await downloadConvertedFile(conversionState.downloadUrl, conversionState.fileName)
@@ -656,9 +719,14 @@ function UploadSection() {
     }
   }
 
-  const handleListItemDelete = (fileId: string): void => {
-    // TODO: 백엔드 삭제 API가 추가되면 이 핸들러에서 서버 삭제를 먼저 호출한다.
-    setConvertedFiles((prevItems) => prevItems.filter((item) => item.file_id !== fileId))
+  const handleListItemDelete = async (fileId: string): Promise<void> => {
+    try {
+      await deleteFile(fileId)
+      setConvertedFiles((prevItems) => prevItems.filter((item) => item.file_id !== fileId))
+    } catch (error) {
+      console.error('파일 삭제 실패', error)
+      // 필요하면 여기서 사용자에게 에러 메시지를 보여줄 수 있어요.
+    }
   }
 
   const handleCancelConversion = (fileId: string): void => {

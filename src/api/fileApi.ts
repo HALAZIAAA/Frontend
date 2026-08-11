@@ -64,3 +64,15 @@ export async function getRecentFiles(): Promise<BackendFileListItemResponse[]> {
 
   return (await response.json()) as BackendFileListItemResponse[]
 }
+
+export async function deleteFile(fileId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/${encodeURIComponent(fileId)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    const errorMessage = await parseErrorResponse(response)
+    throw new Error(errorMessage)
+  }
+}
