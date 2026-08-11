@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 // [DEMO] 데모 복원 시 아래 fileApi import 를 주석 처리하고 fileMockApi import 주석 해제
 // import { getFileStatus, getRecentFiles, uploadFile } from '../../api/fileMockApi'
-import { BACKEND_ORIGIN, deleteFile, getFileStatus, getRecentFiles, uploadFile } from '../../api/fileApi'
+import { BACKEND_ORIGIN, cancelFile, deleteFile, getFileStatus, getRecentFiles, uploadFile } from '../../api/fileApi'
 import { useAuth } from '../../lib/auth'
 // [DEMO] 슬라이드 이미지 — 데모 복원 시 주석 해제
 // import { DEMO_SLIDES } from '../../lib/demoSlides'
@@ -59,8 +59,8 @@ const ACKNOWLEDGED_DONE_FILE_IDS_KEY = 'file_converter_acknowledged_done_file_id
 // 새 탭/새 창/다른 브라우저에서는 비어 있다. 완료 화면을 "그 탭에서만" 복원하는 데 쓴다.
 const SESSION_COMPLETION_FILE_ID_KEY = 'file_converter_session_completion_file_id_v1'
 
-type ConvertedFileStatusLabel = '완료' | '변환 중' | '실패'
-type ConvertedFileStatusVariant = 'done' | 'processing' | 'failed'
+type ConvertedFileStatusLabel = '완료' | '변환 중' | '실패' | '변환 중지'
+type ConvertedFileStatusVariant = 'done' | 'processing' | 'failed' | 'cancelled'
 
 function getStageLabel(stage: BackendFileStage): string {
   const stageMap: Record<BackendFileStage, string> = {
@@ -145,6 +145,13 @@ function getConvertedFileStatusMeta(item: BackendFileListItemResponse): {
 } {
   if (item.status === 'failed' || item.current_stage === 'failed') {
     return { label: '실패', variant: 'failed' }
+  }
+  if (
+    item.status === 'cancelled' ||
+    item.status === 'cancelling' ||
+    item.status === 'delete_failed'
+  ) {
+    return { label: '변환 중지', variant: 'cancelled' }
   }
   if (item.status === 'done' && item.result_ready) {
     return { label: '완료', variant: 'done' }
@@ -729,14 +736,29 @@ function UploadSection() {
     }
   }
 
-  const handleCancelConversion = (fileId: string): void => {
-    // TODO: 백엔드 취소 API(POST /api/v1/files/{file_id}/cancel)가 추가되면 이 핸들러에서
-    //  1) 버튼 즉시 비활성화(중복 클릭 방지)
-    //  2) 해당 job 폴링 즉시 중지
-    //  3) 취소 API 호출
-    //  4) 응답(cancelled) 받으면 목록/화면에서 제거
-    //  를 수행한다. 지금은 요청 API가 없어 UI만 배치한다.
-    void fileId
+  const handleCancelConversion = async (fileId: string): Promise<void> => {
+    try {
+      await cancelFile(fileId)
+    } catch (error) {
+      console.error('작업 중단 실패', error)
+      // 필요하면 여기서 사용자에게 에러 메시지를 보여줄 수 있어요.
+      return
+    }
+
+    // 이 파일이 변환 화면에 떠 있으면 업로드 화면으로 초기화 (폴링도 멈춤)
+    setConversionState((prevState) => (prevState.fileId === fileId ? DEFAULT_STATE : prevState))
+    clearSessionCompletion()
+
+    // 목록에서 즉시 '변환 중지'로 표시 (서버에도 cancelled로 저장됨)
+    setConvertedFiles((prevItems) =>
+      prevItems.map((item) =>
+        item.file_id === fileId
+          ? { ...item, status: 'cancelled' as const, result_ready: false, download_url: null }
+          : item,
+      ),
+    )
+
+    await refreshConvertedFiles()
   }
 
   return (
@@ -854,6 +876,7 @@ function UploadSection() {
             <button
               type="button"
               className="convert-cancel-button"
+              disabled={conversionState.currentStage === 'uploaded'}
               onClick={() => {
                 handleCancelConversion(conversionState.fileId)
               }}
@@ -954,14 +977,15 @@ function UploadSection() {
                   <div className="converted-file-actions">
                     {statusMeta.variant === 'processing' && (
                       <button
-                        type="button"
-                        className="converted-file-action-button danger"
-                        aria-label={`${item.original_name} 변환 중단`}
-                        data-tooltip="변환 중단"
-                        onClick={() => {
-                          handleCancelConversion(item.file_id)
-                        }}
-                      >
+                      type="button"
+                      className="converted-file-action-button danger"
+                      aria-label={`${item.original_name} 변환 중단`}
+                      data-tooltip="변환 중단"
+                      disabled={item.status === 'queued'}
+                      onClick={() => {
+                        handleCancelConversion(item.file_id)
+                      }}
+                    >
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                           <path
                             d="M6 6L18 18M18 6L6 18"

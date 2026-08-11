@@ -76,3 +76,19 @@ export async function deleteFile(fileId: string): Promise<void> {
     throw new Error(errorMessage)
   }
 }
+
+export type CancelResult = { file_id: string; status: string; message: string }
+
+export async function cancelFile(fileId: string): Promise<CancelResult> {
+  const response = await fetch(`${API_BASE}/${encodeURIComponent(fileId)}/cancel`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    const errorMessage = await parseErrorResponse(response)
+    throw new Error(errorMessage)
+  }
+
+  return (await response.json()) as CancelResult
+}

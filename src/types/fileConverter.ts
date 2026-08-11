@@ -1,4 +1,11 @@
-export type BackendFileStatus = 'queued' | 'processing' | 'done' | 'failed'
+export type BackendFileStatus =
+  | 'queued'
+  | 'processing'
+  | 'done'
+  | 'failed'
+  | 'cancelling'
+  | 'cancelled'
+  | 'delete_failed'
 
 export type BackendFileStage =
   | 'uploaded'
