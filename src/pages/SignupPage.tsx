@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/auth/AuthLayout'
 import AuthDivider from '../components/auth/AuthDivider'
 import SocialLoginButton from '../components/auth/SocialLoginButton'
+import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
 import '../styles/auth.css'
 
@@ -21,6 +22,8 @@ type SignupFormErrors = {
 }
 
 function SignupPage() {
+  const { signup } = useAuth()
+  const navigate = useNavigate()
   const [formState, setFormState] = useState<SignupFormState>({
     name: '',
     email: '',
@@ -58,7 +61,7 @@ function SignupPage() {
     return nextErrors
   }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
     setSocialMessage('')
 
@@ -69,8 +72,12 @@ function SignupPage() {
       return
     }
 
-    // TODO: 추후 백엔드 회원가입 API가 추가되면 여기에서 실제 회원가입 요청을 연결한다.
-    setSubmitMessage('현재는 프론트 UI만 구현된 상태입니다.')
+    const result = await signup(formState.name, formState.email, formState.password)
+    if (result.ok) {
+      navigate('/') // 가입 즉시 자동 로그인 → 홈으로
+    } else {
+      setSubmitMessage(result.error ?? '회원가입에 실패했습니다.')
+    }
   }
 
   const handleGoogleSignup = (): void => {

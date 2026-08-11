@@ -58,7 +58,7 @@ function LoginPage() {
     return nextErrors
   }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
     setSocialMessage('')
 
@@ -69,11 +69,11 @@ function LoginPage() {
       return
     }
 
-    const success = login(formState.email, formState.password)
-    if (success) {
+    const result = await login(formState.email, formState.password)
+    if (result.ok) {
       navigate('/')
     } else {
-      setSubmitMessage('이메일 또는 비밀번호가 올바르지 않습니다.')
+      setSubmitMessage(result.error ?? '이메일 또는 비밀번호가 올바르지 않습니다.')
     }
   }
 

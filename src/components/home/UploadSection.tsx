@@ -51,6 +51,9 @@ const DEFAULT_STATE: ConversionState = {
 const POLLING_INTERVAL_MS = 1500
 const STORAGE_KEY = 'file_converter_upload_state_v2'
 const DISMISSED_FAILED_FILE_IDS_KEY = 'file_converter_dismissed_failed_file_ids_v1'
+// 사용자가 명시적 액션(다운로드 / 새 파일 변환)으로 "확인"한 완료 건의 file_id 목록.
+// 이 목록에 있는 완료 건은 재진입/새로고침 시 완료 화면 대신 업로드 화면을 보여준다.
+const ACKNOWLEDGED_DONE_FILE_IDS_KEY = 'file_converter_acknowledged_done_file_ids_v1'
 
 type ConvertedFileStatusLabel = '완료' | '변환 중' | '실패'
 type ConvertedFileStatusVariant = 'done' | 'processing' | 'failed'
@@ -245,6 +248,36 @@ function dismissFailedFile(fileId: string): void {
   writeDismissedFailedFileIds([...dismissedIds, fileId])
 }
 
+function readAcknowledgedDoneFileIds(): string[] {
+  try {
+    const raw = localStorage.getItem(ACKNOWLEDGED_DONE_FILE_IDS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    const validIds = parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    return Array.from(new Set(validIds))
+  } catch {
+    return []
+  }
+}
+
+function writeAcknowledgedDoneFileIds(fileIds: string[]): void {
+  const uniqueIds = Array.from(new Set(fileIds.filter((fileId) => fileId.trim().length > 0)))
+  localStorage.setItem(ACKNOWLEDGED_DONE_FILE_IDS_KEY, JSON.stringify(uniqueIds))
+}
+
+function isDoneFileAcknowledged(fileId: string): boolean {
+  if (!fileId.trim()) return false
+  return readAcknowledgedDoneFileIds().includes(fileId)
+}
+
+function acknowledgeDoneFile(fileId: string): void {
+  if (!fileId.trim()) return
+  const acknowledgedIds = readAcknowledgedDoneFileIds()
+  if (acknowledgedIds.includes(fileId)) return
+  writeAcknowledgedDoneFileIds([...acknowledgedIds, fileId])
+}
+
 function readPersistedState(): PersistedConversionState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -311,6 +344,14 @@ function UploadSection() {
         const latestItem = pickLatestItem(recentItems)
         if (latestItem) {
           if (latestItem.status === 'done' && latestItem.result_ready) {
+            // 사용자가 이미 명시적 액션으로 확인한 완료 건이면
+            // 완료 화면을 다시 띄우지 않고 업로드 화면을 보여준다.
+            if (isDoneFileAcknowledged(latestItem.file_id)) {
+              setConversionState(DEFAULT_STATE)
+              hasHydratedRef.current = true
+              return
+            }
+
             setConversionState({
               ...DEFAULT_STATE,
               status: 'success',
@@ -381,9 +422,13 @@ function UploadSection() {
         setIsConvertedFilesLoading(false)
       }
 
+      const isAcknowledgedSuccessFallback =
+        persistedFallback?.status === 'success' && isDoneFileAcknowledged(persistedFallback.fileId)
+
       if (
         persistedFallback &&
-        !(persistedFallback.status === 'error' && isFailedFileDismissed(persistedFallback.fileId))
+        !(persistedFallback.status === 'error' && isFailedFileDismissed(persistedFallback.fileId)) &&
+        !isAcknowledgedSuccessFallback
       ) {
         setConversionState(toConversionStateFromPersisted(persistedFallback))
       }
@@ -561,6 +606,10 @@ function UploadSection() {
     if (conversionState.status === 'error' && conversionState.fileId) {
       dismissFailedFile(conversionState.fileId)
     }
+    // '새 파일 변환'은 완료 건을 확인한 명시적 액션이므로 재진입 시 완료 화면을 다시 띄우지 않는다.
+    if (conversionState.status === 'success' && conversionState.fileId) {
+      acknowledgeDoneFile(conversionState.fileId)
+    }
     setConversionState(DEFAULT_STATE)
     localStorage.removeItem(STORAGE_KEY)
     if (fileInputRef.current) {
@@ -570,6 +619,9 @@ function UploadSection() {
 
   const handleDownload = async (): Promise<void> => {
     if (!conversionState.downloadUrl) return
+
+    // 다운로드는 완료 건을 확인한 명시적 액션이므로 재진입 시 완료 화면을 다시 띄우지 않는다.
+    acknowledgeDoneFile(conversionState.fileId)
 
     try {
       await downloadConvertedFile(conversionState.downloadUrl, conversionState.fileName)
@@ -607,6 +659,16 @@ function UploadSection() {
   const handleListItemDelete = (fileId: string): void => {
     // TODO: 백엔드 삭제 API가 추가되면 이 핸들러에서 서버 삭제를 먼저 호출한다.
     setConvertedFiles((prevItems) => prevItems.filter((item) => item.file_id !== fileId))
+  }
+
+  const handleCancelConversion = (fileId: string): void => {
+    // TODO: 백엔드 취소 API(POST /api/v1/files/{file_id}/cancel)가 추가되면 이 핸들러에서
+    //  1) 버튼 즉시 비활성화(중복 클릭 방지)
+    //  2) 해당 job 폴링 즉시 중지
+    //  3) 취소 API 호출
+    //  4) 응답(cancelled) 받으면 목록/화면에서 제거
+    //  를 수행한다. 지금은 요청 API가 없어 UI만 배치한다.
+    void fileId
   }
 
   return (
@@ -720,6 +782,16 @@ function UploadSection() {
             </div>
             <p className="progress-percent-text">{Math.round(conversionState.progress)}%</p>
             <p className="progress-stage-text">{getStageLabel(conversionState.currentStage)}</p>
+
+            <button
+              type="button"
+              className="convert-cancel-button"
+              onClick={() => {
+                handleCancelConversion(conversionState.fileId)
+              }}
+            >
+              변환 중단
+            </button>
           </div>
         )}
 
@@ -812,10 +884,33 @@ function UploadSection() {
                   </div>
 
                   <div className="converted-file-actions">
+                    {statusMeta.variant === 'processing' && (
+                      <button
+                        type="button"
+                        className="converted-file-action-button danger"
+                        aria-label={`${item.original_name} 변환 중단`}
+                        data-tooltip="변환 중단"
+                        onClick={() => {
+                          handleCancelConversion(item.file_id)
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <path
+                            d="M6 6L18 18M18 6L6 18"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       className="converted-file-action-button"
                       aria-label={`${item.original_name} 다운로드`}
+                      data-tooltip="다운로드"
                       disabled={!isDownloadEnabled}
                       onClick={() => {
                         void handleListItemDownload(item)
@@ -836,6 +931,8 @@ function UploadSection() {
                       type="button"
                       className="converted-file-action-button danger"
                       aria-label={`${item.original_name} 목록에서 삭제`}
+                      data-tooltip="목록에서 삭제"
+                      disabled={statusMeta.variant === 'processing'}
                       onClick={() => {
                         handleListItemDelete(item.file_id)
                       }}
