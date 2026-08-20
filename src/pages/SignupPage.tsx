@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/auth/AuthLayout'
 import AuthDivider from '../components/auth/AuthDivider'
-import SocialLoginButton from '../components/auth/SocialLoginButton'
+import GoogleLoginButton from '../components/auth/GoogleLoginButton'
 import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
 import '../styles/auth.css'
@@ -80,14 +80,12 @@ function SignupPage() {
     }
   }
 
-  const handleGoogleSignup = (): void => {
-    // TODO: 백엔드 Google OAuth API 추가 후 연동 예정 (예: /auth/google/login).
-    setSocialMessage('Google 회원가입은 현재 준비 중입니다.')
-  }
-
   return (
     <AuthLayout title="회원가입">
-      <SocialLoginButton provider="google" label="Google로 회원가입" onClick={handleGoogleSignup} />
+      <GoogleLoginButton
+        onSuccess={() => navigate('/')}
+        onError={(message) => setSocialMessage(message)}
+      />
 
       <AuthDivider />
 

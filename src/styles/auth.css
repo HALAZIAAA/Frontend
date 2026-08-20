@@ -40,6 +40,26 @@
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
+/* 구글 공식 버튼(iframe)을 카드 가운데로.
+   GIS는 폭 최대 400px·높이 고정이라 scale로 회원가입 버튼 크기에 맞춘다. */
+.google-login-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 3.3rem;
+}
+
+.google-login-button > div {
+  transform: scale(1.18);
+  transform-origin: center;
+}
+
+@media (max-width: 640px) {
+  .google-login-button > div {
+    transform: none;
+  }
+}
+
 .social-login-button + .social-login-button {
   margin-top: 0.6rem;
 }

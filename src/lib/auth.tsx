@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { apiLogin, apiLogout, apiMe, apiSignup, type AuthUser } from '../api/authApi'
+import { apiGoogleLogin, apiLogin, apiLogout, apiMe, apiSignup, type AuthUser } from '../api/authApi'
 
 type AuthResult = { ok: boolean; error?: string }
 
@@ -7,6 +7,7 @@ type AuthContextValue = {
   user: AuthUser | null
   loading: boolean
   login: (email: string, password: string) => Promise<AuthResult>
+  loginWithGoogle: (credential: string) => Promise<AuthResult>
   signup: (name: string, email: string, password: string) => Promise<AuthResult>
   logout: () => Promise<void>
 }
@@ -38,6 +39,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const loginWithGoogle = async (credential: string): Promise<AuthResult> => {
+    try {
+      const me = await apiGoogleLogin(credential)
+      setUser(me)
+      return { ok: true }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : '구글 로그인에 실패했습니다.',
+      }
+    }
+  }
+
   const signup = async (
     name: string,
     email: string,
@@ -64,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -44,6 +44,17 @@ export async function apiLogin(email: string, password: string): Promise<AuthUse
   return (await res.json()) as AuthUser
 }
 
+export async function apiGoogleLogin(credential: string): Promise<AuthUser> {
+  const res = await fetch(`${AUTH_BASE}/google`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credential }),
+  })
+  if (!res.ok) throw new Error(await parseError(res))
+  return (await res.json()) as AuthUser
+}
+
 export async function apiLogout(): Promise<void> {
   const res = await fetch(`${AUTH_BASE}/logout`, {
     method: 'POST',
