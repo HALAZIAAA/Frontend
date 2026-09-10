@@ -5,7 +5,7 @@ import { BACKEND_ORIGIN, cancelFile, deleteFile, getFileStatus, getRecentFiles, 
 import { useAuth } from '../../lib/auth'
 // [DEMO] 슬라이드 이미지 — 데모 복원 시 주석 해제
 // import { DEMO_SLIDES } from '../../lib/demoSlides'
-import type { BackendFileListItemResponse, BackendFileStage } from '../../types/fileConverter'
+import type { BackendFileListItemResponse, BackendFileStage, ResultFileFormat } from '../../types/fileConverter'
 
 type ConversionStatus = 'idle' | 'file_selected' | 'converting' | 'success' | 'error'
 
@@ -18,6 +18,7 @@ type ConversionState = {
   currentStage: BackendFileStage
   progress: number
   downloadUrl: string | null
+  warnings: string[]
   errorMessage: string
   errorUserMessage: string
   isSubmitting: boolean
@@ -31,6 +32,7 @@ type PersistedConversionState = {
   currentStage: BackendFileStage
   progress: number
   downloadUrl: string | null
+  warnings: string[]
   errorMessage: string
   errorUserMessage: string
 }
@@ -44,6 +46,7 @@ const DEFAULT_STATE: ConversionState = {
   currentStage: 'uploaded',
   progress: 0,
   downloadUrl: null,
+  warnings: [],
   errorMessage: '',
   errorUserMessage: '',
   isSubmitting: false,
@@ -67,7 +70,7 @@ function getStageLabel(stage: BackendFileStage): string {
     uploaded: '업로드 중',
     extracting: '이미지 추출',
     describing: '이미지 설명 생성',
-    generating_docx: 'docx 형식으로 내용 병합',
+    generating_docx: '결과 문서(DOCX·TXT) 생성',
     completed: '완료',
     failed: '실패',
   }
@@ -105,6 +108,7 @@ function mapErrorCodeToUserMessage(errorMessage: string): string {
     EXTRACTION_FAILED: '파일 내용 추출 중 오류가 발생했습니다.',
     AI_REQUEST_FAILED: '이미지 설명 생성 중 오류가 발생했습니다.',
     DOCX_GENERATION_FAILED: '문서 생성 중 오류가 발생했습니다.',
+    TXT_GENERATION_FAILED: '텍스트(TXT) 결과 생성 중 오류가 발생했습니다.',
     PIPELINE_FAILED: '변환 처리 중 오류가 발생했습니다.',
   }
   return codeMap[normalizedCode] ?? '변환 중 오류가 발생했습니다.'
@@ -179,16 +183,20 @@ function formatRelativeCreatedAt(createdAt: string): string {
   return `${Math.max(diffHours, 1)}시간 전`
 }
 
-function toDocxFileName(originalFileName: string): string {
-  return `${originalFileName.replace(/\.[^/.]+$/, '')}.docx`
+function toResultFileName(originalFileName: string, format: ResultFileFormat): string {
+  return `${originalFileName.replace(/\.[^/.]+$/, '')}.${format}`
 }
 
-async function downloadConvertedFile(downloadUrl: string, originalFileName: string): Promise<void> {
+async function downloadConvertedFile(
+  downloadUrl: string,
+  originalFileName: string,
+  format: ResultFileFormat = 'docx',
+): Promise<void> {
   // [DEMO] Blob URL 직접 다운로드 — 데모 복원 시 주석 해제
   // if (downloadUrl.startsWith('blob:')) {
   //   const link = document.createElement('a')
   //   link.href = downloadUrl
-  //   link.download = toDocxFileName(originalFileName)
+  //   link.download = toResultFileName(originalFileName, format)
   //   document.body.appendChild(link)
   //   link.click()
   //   link.remove()
@@ -196,7 +204,8 @@ async function downloadConvertedFile(downloadUrl: string, originalFileName: stri
   // }
   // [REAL] 백엔드 다운로드
   const absoluteDownloadUrl = downloadUrl.startsWith('http') ? downloadUrl : `${BACKEND_ORIGIN}${downloadUrl}`
-  const response = await fetch(absoluteDownloadUrl, {
+  const separator = absoluteDownloadUrl.includes('?') ? '&' : '?'
+  const response = await fetch(`${absoluteDownloadUrl}${separator}format=${format}`, {
     method: 'GET',
     credentials: 'include',
   })
@@ -208,7 +217,7 @@ async function downloadConvertedFile(downloadUrl: string, originalFileName: stri
   const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = objectUrl
-  link.download = toDocxFileName(originalFileName)
+  link.download = toResultFileName(originalFileName, format)
   document.body.appendChild(link)
   link.click()
   link.remove()
@@ -224,6 +233,7 @@ function toPersistedState(state: ConversionState): PersistedConversionState {
     currentStage: state.currentStage,
     progress: state.progress,
     downloadUrl: state.downloadUrl,
+    warnings: state.warnings,
     errorMessage: state.errorMessage,
     errorUserMessage: state.errorUserMessage,
   }
@@ -336,6 +346,7 @@ function toConversionStateFromPersisted(persisted: PersistedConversionState): Co
     currentStage: persisted.currentStage,
     progress: persisted.progress,
     downloadUrl: persisted.downloadUrl,
+    warnings: persisted.warnings ?? [],
     errorMessage: persisted.errorMessage,
     errorUserMessage: persisted.errorUserMessage,
   }
@@ -394,6 +405,15 @@ function UploadSection() {
               return
             }
 
+            // 목록 응답에는 warnings가 없어 상태 API로 검수 경고를 가져온다.
+            let restoredWarnings: string[] = persistedFallback?.warnings ?? []
+            try {
+              const statusResponse = await getFileStatus(latestItem.file_id)
+              restoredWarnings = statusResponse.warnings ?? []
+            } catch {
+              // 조회 실패 시 localStorage에 남은 경고를 유지한다.
+            }
+
             setConversionState({
               ...DEFAULT_STATE,
               status: 'success',
@@ -402,6 +422,7 @@ function UploadSection() {
               currentStage: 'completed',
               progress: 100,
               downloadUrl: latestItem.download_url,
+              warnings: restoredWarnings,
             })
             hasHydratedRef.current = true
             return
@@ -525,6 +546,7 @@ function UploadSection() {
               currentStage: 'completed',
               progress: 100,
               downloadUrl: response.download_url,
+              warnings: response.warnings ?? [],
               errorMessage: '',
               errorUserMessage: '',
               isSubmitting: false,
@@ -686,7 +708,7 @@ function UploadSection() {
     }
   }
 
-  const handleDownload = async (): Promise<void> => {
+  const handleDownload = async (format: ResultFileFormat): Promise<void> => {
     if (!conversionState.downloadUrl) return
 
     // 다운로드는 완료 건을 확인한 명시적 액션이므로 재진입 시 완료 화면을 다시 띄우지 않는다.
@@ -694,7 +716,7 @@ function UploadSection() {
     clearSessionCompletion()
 
     try {
-      await downloadConvertedFile(conversionState.downloadUrl, conversionState.fileName)
+      await downloadConvertedFile(conversionState.downloadUrl, conversionState.fileName, format)
     } catch (error) {
       const message = error instanceof Error ? error.message : '다운로드 중 오류가 발생했습니다.'
       setConversionState((prevState) => ({
@@ -708,11 +730,14 @@ function UploadSection() {
     }
   }
 
-  const handleListItemDownload = async (item: BackendFileListItemResponse): Promise<void> => {
+  const handleListItemDownload = async (
+    item: BackendFileListItemResponse,
+    format: ResultFileFormat,
+  ): Promise<void> => {
     if (!item.download_url) return
 
     try {
-      await downloadConvertedFile(item.download_url, item.original_name)
+      await downloadConvertedFile(item.download_url, item.original_name, format)
     } catch (error) {
       const message = error instanceof Error ? error.message : '다운로드 중 오류가 발생했습니다.'
       setConversionState((prevState) => ({
@@ -894,9 +919,35 @@ function UploadSection() {
             <h2 className="upload-box-title">변환 완료!</h2>
             <p className="upload-box-support-text">파일이 성공적으로 변환되었습니다</p>
 
+            {conversionState.warnings.length > 0 && (
+              <div className="conversion-warning-box" role="status">
+                <p className="conversion-warning-title">TXT 검수 확인 필요</p>
+                <ul className="conversion-warning-list">
+                  {conversionState.warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="selected-action-row">
-              <button type="button" className="convert-start-button" onClick={handleDownload}>
-                다운로드
+              <button
+                type="button"
+                className="convert-start-button"
+                onClick={() => {
+                  void handleDownload('docx')
+                }}
+              >
+                DOCX 다운로드
+              </button>
+              <button
+                type="button"
+                className="convert-start-button"
+                onClick={() => {
+                  void handleDownload('txt')
+                }}
+              >
+                TXT 다운로드
               </button>
               <button type="button" className="upload-select-button secondary-action-button" onClick={handleReset}>
                 새 파일 변환
@@ -1001,11 +1052,11 @@ function UploadSection() {
                     <button
                       type="button"
                       className="converted-file-action-button"
-                      aria-label={`${item.original_name} 다운로드`}
-                      data-tooltip="다운로드"
+                      aria-label={`${item.original_name} DOCX 다운로드`}
+                      data-tooltip="DOCX 다운로드"
                       disabled={!isDownloadEnabled}
                       onClick={() => {
-                        void handleListItemDownload(item)
+                        void handleListItemDownload(item, 'docx')
                       }}
                     >
                       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -1017,6 +1068,19 @@ function UploadSection() {
                           strokeLinejoin="round"
                         />
                       </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="converted-file-action-button txt-download-button"
+                      aria-label={`${item.original_name} TXT 다운로드`}
+                      data-tooltip="TXT 다운로드"
+                      disabled={!isDownloadEnabled}
+                      onClick={() => {
+                        void handleListItemDownload(item, 'txt')
+                      }}
+                    >
+                      TXT
                     </button>
 
                     <button

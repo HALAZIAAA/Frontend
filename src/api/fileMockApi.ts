@@ -90,6 +90,7 @@ export async function getFileStatus(fileId: string): Promise<BackendFileStatusRe
       result_ready: true,
       download_url: demo.downloadUrl,
       error_message: null,
+      warnings: [],
     }
   }
 
@@ -117,6 +118,7 @@ export async function getFileStatus(fileId: string): Promise<BackendFileStatusRe
     result_ready: false,
     download_url: null,
     error_message: null,
+    warnings: [],
   }
 }
 

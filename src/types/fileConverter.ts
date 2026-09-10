@@ -23,6 +23,8 @@ export type BackendFileProcessResponse = {
   message: string
 }
 
+export type ResultFileFormat = 'docx' | 'txt'
+
 export type BackendFileStatusResponse = {
   file_id: string
   status: BackendFileStatus
@@ -33,6 +35,8 @@ export type BackendFileStatusResponse = {
   result_ready: boolean
   download_url: string | null
   error_message: string | null
+  // txt 생성 시 국소 오류 경고 목록 (docs/txt_spec.md 4.2) — 검수 화면에 표시
+  warnings: string[]
 }
 
 export type BackendFileListItemResponse = {

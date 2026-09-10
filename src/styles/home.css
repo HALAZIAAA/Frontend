@@ -666,3 +666,37 @@
     justify-content: flex-end;
   }
 }
+
+/* TXT 결과 관련 (docs/txt_spec.md) */
+.txt-download-button {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.conversion-warning-box {
+  margin: 0 0 1rem;
+  width: 100%;
+  max-width: 520px;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.55rem;
+  background-color: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.conversion-warning-title {
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+}
+
+.conversion-warning-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.conversion-warning-list li + li {
+  margin-top: 0.25rem;
+}
