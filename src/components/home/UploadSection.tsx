@@ -54,13 +54,6 @@ const DEFAULT_STATE: ConversionState = {
 
 const POLLING_INTERVAL_MS = 1500
 const STORAGE_KEY = 'file_converter_upload_state_v2'
-const DISMISSED_FAILED_FILE_IDS_KEY = 'file_converter_dismissed_failed_file_ids_v1'
-// 사용자가 명시적 액션(다운로드 / 새 파일 변환)으로 "확인"한 완료 건의 file_id 목록.
-// 이 목록에 있는 완료 건은 재진입/새로고침 시 완료 화면 대신 업로드 화면을 보여준다.
-const ACKNOWLEDGED_DONE_FILE_IDS_KEY = 'file_converter_acknowledged_done_file_ids_v1'
-// 이 "탭"에서 방금 완료된(아직 다운로드/확인 안 한) 파일 id. sessionStorage라 탭별로 분리되고,
-// 새 탭/새 창/다른 브라우저에서는 비어 있다. 완료 화면을 "그 탭에서만" 복원하는 데 쓴다.
-const SESSION_COMPLETION_FILE_ID_KEY = 'file_converter_session_completion_file_id_v1'
 
 type ConvertedFileStatusLabel = '완료' | '변환 중' | '실패' | '변환 중지'
 type ConvertedFileStatusVariant = 'done' | 'processing' | 'failed' | 'cancelled'
@@ -239,91 +232,6 @@ function toPersistedState(state: ConversionState): PersistedConversionState {
   }
 }
 
-function readDismissedFailedFileIds(): string[] {
-  try {
-    const raw = localStorage.getItem(DISMISSED_FAILED_FILE_IDS_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as unknown
-    if (!Array.isArray(parsed)) return []
-    const validIds = parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-    return Array.from(new Set(validIds))
-  } catch {
-    return []
-  }
-}
-
-function writeDismissedFailedFileIds(fileIds: string[]): void {
-  const uniqueIds = Array.from(new Set(fileIds.filter((fileId) => fileId.trim().length > 0)))
-  localStorage.setItem(DISMISSED_FAILED_FILE_IDS_KEY, JSON.stringify(uniqueIds))
-}
-
-function isFailedFileDismissed(fileId: string): boolean {
-  if (!fileId.trim()) return false
-  return readDismissedFailedFileIds().includes(fileId)
-}
-
-function dismissFailedFile(fileId: string): void {
-  if (!fileId.trim()) return
-  const dismissedIds = readDismissedFailedFileIds()
-  if (dismissedIds.includes(fileId)) return
-  writeDismissedFailedFileIds([...dismissedIds, fileId])
-}
-
-function readAcknowledgedDoneFileIds(): string[] {
-  try {
-    const raw = localStorage.getItem(ACKNOWLEDGED_DONE_FILE_IDS_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as unknown
-    if (!Array.isArray(parsed)) return []
-    const validIds = parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-    return Array.from(new Set(validIds))
-  } catch {
-    return []
-  }
-}
-
-function writeAcknowledgedDoneFileIds(fileIds: string[]): void {
-  const uniqueIds = Array.from(new Set(fileIds.filter((fileId) => fileId.trim().length > 0)))
-  localStorage.setItem(ACKNOWLEDGED_DONE_FILE_IDS_KEY, JSON.stringify(uniqueIds))
-}
-
-function isDoneFileAcknowledged(fileId: string): boolean {
-  if (!fileId.trim()) return false
-  return readAcknowledgedDoneFileIds().includes(fileId)
-}
-
-function acknowledgeDoneFile(fileId: string): void {
-  if (!fileId.trim()) return
-  const acknowledgedIds = readAcknowledgedDoneFileIds()
-  if (acknowledgedIds.includes(fileId)) return
-  writeAcknowledgedDoneFileIds([...acknowledgedIds, fileId])
-}
-
-function readSessionCompletionFileId(): string | null {
-  try {
-    return sessionStorage.getItem(SESSION_COMPLETION_FILE_ID_KEY)
-  } catch {
-    return null
-  }
-}
-
-function markSessionCompletion(fileId: string): void {
-  if (!fileId.trim()) return
-  try {
-    sessionStorage.setItem(SESSION_COMPLETION_FILE_ID_KEY, fileId)
-  } catch {
-    // sessionStorage 사용 불가 환경은 무시한다.
-  }
-}
-
-function clearSessionCompletion(): void {
-  try {
-    sessionStorage.removeItem(SESSION_COMPLETION_FILE_ID_KEY)
-  } catch {
-    // 무시
-  }
-}
-
 function readPersistedState(): PersistedConversionState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -390,76 +298,10 @@ function UploadSection() {
         hasLoadedListRef.current = true
         setIsConvertedFilesLoading(false)
 
+        // 완료/실패 건은 결과 화면을 복원하지 않는다 — 목록 배지로만 보여주고
+        // 첫 화면은 항상 업로드 화면. 변환 중인 건만 진행 화면을 복원한다.
         const latestItem = pickLatestItem(recentItems)
         if (latestItem) {
-          if (latestItem.status === 'done' && latestItem.result_ready) {
-            // 완료 화면은 "이 탭에서 방금 변환한" 경우에만 복원한다.
-            // 새 탭/새 창/다른 브라우저에서는 sessionStorage가 비어 있어 업로드 화면을 보여준다.
-            const isThisTabCompletion =
-              readSessionCompletionFileId() === latestItem.file_id
-
-            // 이미 확인한 완료 건이거나, 이 탭에서 만든 완료가 아니면 업로드 화면.
-            if (isDoneFileAcknowledged(latestItem.file_id) || !isThisTabCompletion) {
-              setConversionState(DEFAULT_STATE)
-              hasHydratedRef.current = true
-              return
-            }
-
-            // 목록 응답에는 warnings가 없어 상태 API로 검수 경고를 가져온다.
-            let restoredWarnings: string[] = persistedFallback?.warnings ?? []
-            try {
-              const statusResponse = await getFileStatus(latestItem.file_id)
-              restoredWarnings = statusResponse.warnings ?? []
-            } catch {
-              // 조회 실패 시 localStorage에 남은 경고를 유지한다.
-            }
-
-            setConversionState({
-              ...DEFAULT_STATE,
-              status: 'success',
-              fileId: latestItem.file_id,
-              fileName: latestItem.original_name,
-              currentStage: 'completed',
-              progress: 100,
-              downloadUrl: latestItem.download_url,
-              warnings: restoredWarnings,
-            })
-            hasHydratedRef.current = true
-            return
-          }
-
-          if (latestItem.status === 'failed' || latestItem.current_stage === 'failed') {
-            if (isFailedFileDismissed(latestItem.file_id)) {
-              setConversionState(DEFAULT_STATE)
-              hasHydratedRef.current = true
-              return
-            }
-
-            let detailedErrorMessage =
-              persistedFallback?.errorMessage ?? 'PIPELINE_FAILED: 변환 처리 중 오류가 발생했습니다.'
-
-            try {
-              const statusResponse = await getFileStatus(latestItem.file_id)
-              detailedErrorMessage = statusResponse.error_message ?? detailedErrorMessage
-            } catch {
-              // 상세 상태 조회가 실패하면 기존 메시지를 유지한다.
-            }
-
-            setConversionState({
-              ...DEFAULT_STATE,
-              status: 'error',
-              fileId: latestItem.file_id,
-              fileName: latestItem.original_name,
-              currentStage: 'failed',
-              progress: Math.max(persistedFallback?.progress ?? 0, 10),
-              downloadUrl: latestItem.download_url,
-              errorMessage: detailedErrorMessage,
-              errorUserMessage: mapErrorCodeToUserMessage(detailedErrorMessage),
-            })
-            hasHydratedRef.current = true
-            return
-          }
-
           if (latestItem.status === 'queued' || latestItem.status === 'processing') {
             const initialProgress = getProgressByStage(
               latestItem.current_stage,
@@ -480,19 +322,18 @@ function UploadSection() {
             return
           }
         }
+
+        // 서버 조회가 성공했고 변환 중인 건이 없으면 항상 업로드 화면.
+        setConversionState(DEFAULT_STATE)
+        hasHydratedRef.current = true
+        return
       } catch {
         // 서버 복구 실패 시 localStorage fallback으로 진행한다.
         setIsConvertedFilesLoading(false)
       }
 
-      const isAcknowledgedSuccessFallback =
-        persistedFallback?.status === 'success' && isDoneFileAcknowledged(persistedFallback.fileId)
-
-      if (
-        persistedFallback &&
-        !(persistedFallback.status === 'error' && isFailedFileDismissed(persistedFallback.fileId)) &&
-        !isAcknowledgedSuccessFallback
-      ) {
+      // fallback에서도 변환 중이던 건만 복원한다. 완료/실패는 업로드 화면 유지.
+      if (persistedFallback && persistedFallback.status === 'converting') {
         setConversionState(toConversionStateFromPersisted(persistedFallback))
       }
       hasHydratedRef.current = true
@@ -603,14 +444,6 @@ function UploadSection() {
     }
   }, [conversionState.status, refreshConvertedFiles])
 
-  // 이 탭에서 변환이 완료되면, 완료 화면을 이 탭에서만 복원할 수 있도록 표시를 남긴다.
-  useEffect(() => {
-    if (!hasHydratedRef.current) return
-    if (conversionState.status === 'success' && conversionState.fileId) {
-      markSessionCompletion(conversionState.fileId)
-    }
-  }, [conversionState.status, conversionState.fileId])
-
   // 로그인/로그아웃 시 목록을 갱신하고, 로그아웃되면 화면을 업로드 화면으로 초기화한다.
   useEffect(() => {
     const prevUserId = prevUserIdRef.current
@@ -623,8 +456,7 @@ function UploadSection() {
     void refreshConvertedFiles()
 
     if (currentUserId === null) {
-      // 로그아웃: 완료/변환 화면을 초기화하고 이 탭의 완료 표시를 지운다.
-      clearSessionCompletion()
+      // 로그아웃: 완료/변환 화면을 초기화한다.
       setConversionState(DEFAULT_STATE)
     }
   }, [user, refreshConvertedFiles])
@@ -693,14 +525,6 @@ function UploadSection() {
   }
 
   const handleReset = (): void => {
-    if (conversionState.status === 'error' && conversionState.fileId) {
-      dismissFailedFile(conversionState.fileId)
-    }
-    // '새 파일 변환'은 완료 건을 확인한 명시적 액션이므로 재진입 시 완료 화면을 다시 띄우지 않는다.
-    if (conversionState.status === 'success' && conversionState.fileId) {
-      acknowledgeDoneFile(conversionState.fileId)
-    }
-    clearSessionCompletion()
     setConversionState(DEFAULT_STATE)
     localStorage.removeItem(STORAGE_KEY)
     if (fileInputRef.current) {
@@ -710,10 +534,6 @@ function UploadSection() {
 
   const handleDownload = async (format: ResultFileFormat): Promise<void> => {
     if (!conversionState.downloadUrl) return
-
-    // 다운로드는 완료 건을 확인한 명시적 액션이므로 재진입 시 완료 화면을 다시 띄우지 않는다.
-    acknowledgeDoneFile(conversionState.fileId)
-    clearSessionCompletion()
 
     try {
       await downloadConvertedFile(conversionState.downloadUrl, conversionState.fileName, format)
@@ -772,7 +592,6 @@ function UploadSection() {
 
     // 이 파일이 변환 화면에 떠 있으면 업로드 화면으로 초기화 (폴링도 멈춤)
     setConversionState((prevState) => (prevState.fileId === fileId ? DEFAULT_STATE : prevState))
-    clearSessionCompletion()
 
     // 목록에서 즉시 '변환 중지'로 표시 (서버에도 cancelled로 저장됨)
     setConvertedFiles((prevItems) =>
