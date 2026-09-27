@@ -51,7 +51,7 @@ function PostWritePage() {
 
   return (
     <div className="write-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티']} />
+      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
       <main className="write-main">
         <Link to="/community" className="write-back-link">

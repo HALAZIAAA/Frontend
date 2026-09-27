@@ -71,7 +71,7 @@ function PostEditPage() {
   if (loading) {
     return (
       <div className="write-page">
-        <Navbar menuItems={['파일 변환', '커뮤니티']} />
+        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
         <main className="write-main">
           <div className="post-detail-not-found">
             <p>불러오는 중...</p>
@@ -85,7 +85,7 @@ function PostEditPage() {
   if (!post || !post.isMine) {
     return (
       <div className="write-page">
-        <Navbar menuItems={['파일 변환', '커뮤니티']} />
+        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
         <main className="write-main">
           <div className="post-detail-not-found">
             <p>{post ? '본인이 작성한 글만 수정할 수 있습니다.' : '존재하지 않는 게시글입니다'}</p>
@@ -98,7 +98,7 @@ function PostEditPage() {
 
   return (
     <div className="write-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티']} />
+      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
       <main className="write-main">
         <Link to={`/community/${postId}`} className="write-back-link">

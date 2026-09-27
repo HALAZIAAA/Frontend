@@ -377,6 +377,13 @@
   gap: 0.65rem;
 }
 
+/* 2열 그리드에서 홀로 남는 버튼을 두 칸에 걸쳐 가운데 둔다 */
+.selected-action-row .action-row-center {
+  grid-column: 1 / -1;
+  justify-self: center;
+  min-width: 11rem;
+}
+
 .upload-select-button {
   border: 1px solid #2563eb;
   background-color: #2563eb;
@@ -634,6 +641,11 @@
     grid-template-columns: 1fr;
   }
 
+  /* 한 열로 쌓이면 다른 버튼과 같은 너비가 자연스럽다 */
+  .selected-action-row .action-row-center {
+    justify-self: stretch;
+  }
+
   .format-row {
     width: 100%;
     justify-content: center;
@@ -667,11 +679,18 @@
   }
 }
 
-/* TXT 결과 관련 (docs/txt_spec.md) */
-.txt-download-button {
+/* 형식 이름을 글자로 보여주는 다운로드 버튼 (docs/txt_spec.md) */
+.txt-download-button,
+.docx-download-button {
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+
+/* 네 글자라 2.35rem 정사각형 버튼에 맞게 줄인다 */
+.docx-download-button {
+  font-size: 0.58rem;
+  letter-spacing: 0;
 }
 
 .conversion-warning-box {

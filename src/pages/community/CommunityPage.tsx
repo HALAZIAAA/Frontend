@@ -82,7 +82,7 @@ function CommunityPage() {
 
   return (
     <div className="community-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티']} />
+      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
       <main className="community-main">
 

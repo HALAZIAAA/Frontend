@@ -168,7 +168,7 @@ function PostDetailPage() {
   if (loading) {
     return (
       <div className="post-detail-page">
-        <Navbar menuItems={['파일 변환', '커뮤니티']} />
+        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
         <main className="post-detail-main">
           <div className="post-detail-not-found">
             <p>불러오는 중...</p>
@@ -181,7 +181,7 @@ function PostDetailPage() {
   if (!post) {
     return (
       <div className="post-detail-page">
-        <Navbar menuItems={['파일 변환', '커뮤니티']} />
+        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
         <main className="post-detail-main">
           <div className="post-detail-not-found">
             <p>존재하지 않는 게시글입니다.</p>
@@ -194,7 +194,7 @@ function PostDetailPage() {
 
   return (
     <div className="post-detail-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티']} />
+      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
       <main className="post-detail-main">
         <Link to="/community" className="post-detail-back-link">

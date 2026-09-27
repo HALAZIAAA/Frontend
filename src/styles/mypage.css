@@ -123,6 +123,43 @@
   cursor: not-allowed;
 }
 
+/* 로그인 없이 마이페이지에 들어온 경우의 안내 */
+.mypage-guard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+
+.mypage-guard-message {
+  margin: 0;
+  color: #111827;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.mypage-guard-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 10rem;
+  height: 3rem;
+  padding: 0 1.4rem;
+  border-radius: 0.65rem;
+  background-color: #4f46e5;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.mypage-guard-button:hover {
+  background-color: #4338ca;
+}
+
 .mypage-message {
   margin: 0.8rem 0 0;
   color: #059669;

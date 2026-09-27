@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
@@ -26,8 +26,24 @@ function MyPage() {
     return null
   }
 
+  // 로그인 페이지로 바로 튕기지 않고, 무엇이 필요한지 알려주고 직접 고르게 한다.
   if (!user) {
-    return <Navigate to="/login" replace />
+    return (
+      <div className="mypage-page">
+        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+
+        <main className="mypage-main">
+          <h1 className="mypage-title">마이페이지</h1>
+
+          <section className="mypage-card mypage-guard" aria-label="로그인 안내">
+            <p className="mypage-guard-message">로그인이 필요한 서비스입니다.</p>
+            <Link to="/login" className="mypage-guard-button">
+              로그인
+            </Link>
+          </section>
+        </main>
+      </div>
+    )
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
@@ -61,7 +77,7 @@ function MyPage() {
 
   return (
     <div className="mypage-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티']} />
+      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
       <main className="mypage-main">
         <h1 className="mypage-title">마이페이지</h1>

@@ -831,7 +831,11 @@ function UploadSection() {
               >
                 TXT 다운로드
               </button>
-              <button type="button" className="upload-select-button secondary-action-button" onClick={handleReset}>
+              <button
+                type="button"
+                className="upload-select-button secondary-action-button action-row-center"
+                onClick={handleReset}
+              >
                 새 파일 변환
               </button>
             </div>
@@ -934,7 +938,7 @@ function UploadSection() {
 
                     <button
                       type="button"
-                      className="converted-file-action-button"
+                      className="converted-file-action-button docx-download-button"
                       aria-label={`${item.original_name} DOCX 다운로드`}
                       data-tooltip={isDocxEnabled ? 'DOCX 다운로드' : 'DOCX 파일 없음'}
                       disabled={!isDocxEnabled}
@@ -942,15 +946,7 @@ function UploadSection() {
                         void handleListItemDownload(item, 'docx')
                       }}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path
-                          d="M12 4V14M12 14L8 10M12 14L16 10M5 17V19C5 19.55 5.45 20 6 20H18C18.55 20 19 19.55 19 19V17"
-                          stroke="currentColor"
-                          strokeWidth="1.7"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                      DOCX
                     </button>
 
                     <button
