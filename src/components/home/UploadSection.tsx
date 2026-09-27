@@ -13,7 +13,12 @@ import {
 import { useAuth } from '../../lib/auth'
 // [DEMO] 슬라이드 이미지 — 데모 복원 시 주석 해제
 // import { DEMO_SLIDES } from '../../lib/demoSlides'
-import type { BackendFileListItemResponse, BackendFileStage, ResultFileFormat } from '../../types/fileConverter'
+import type {
+  BackendFileListItemResponse,
+  BackendFileStage,
+  BackendFileStatusResponse,
+  ResultFileFormat,
+} from '../../types/fileConverter'
 
 type ConversionStatus = 'idle' | 'file_selected' | 'converting' | 'success' | 'error'
 
@@ -28,6 +33,9 @@ type ConversionState = {
   downloadUrl: string | null
   availableFormats: ResultFileFormat[]
   warnings: string[]
+  startedAtMs: number | null
+  speedSample: SpeedSample | null
+  remainingSeconds: number | null
   errorMessage: string
   errorUserMessage: string
   isSubmitting: boolean
@@ -43,6 +51,7 @@ type PersistedConversionState = {
   downloadUrl: string | null
   availableFormats: ResultFileFormat[]
   warnings: string[]
+  startedAtMs: number | null
   errorMessage: string
   errorUserMessage: string
 }
@@ -58,6 +67,9 @@ const DEFAULT_STATE: ConversionState = {
   downloadUrl: null,
   availableFormats: [],
   warnings: [],
+  startedAtMs: null,
+  speedSample: null,
+  remainingSeconds: null,
   errorMessage: '',
   errorUserMessage: '',
   isSubmitting: false,
@@ -74,12 +86,18 @@ type ConvertedFileStatusVariant = 'done' | 'processing' | 'failed' | 'cancelled'
 
 function getStageLabel(stage: BackendFileStage): string {
   const stageMap: Record<BackendFileStage, string> = {
+    queued: '대기 중',
     uploaded: '업로드 중',
     extracting: '이미지 추출',
+    ocr: '글자 인식(OCR)',
     describing: '이미지 설명 생성',
+    refining: '원고 정리',
     generating_docx: '결과 문서(DOCX·TXT) 생성',
     completed: '완료',
     failed: '실패',
+    cancelling: '변환 중지 중',
+    cancelled: '변환 중지됨',
+    delete_failed: '파일 정리 실패',
   }
   return stageMap[stage]
 }
@@ -90,19 +108,59 @@ function getProgressByStage(
   totalImages: number,
   previousProgress: number,
 ): number {
+  if (stage === 'queued') return 5
   if (stage === 'uploaded') return 10
   if (stage === 'extracting') return 20
+  if (stage === 'ocr') return 25
+  if (stage === 'refining') return 85
   if (stage === 'generating_docx') return 90
   if (stage === 'completed') return 100
-  if (stage === 'failed') return previousProgress
 
   if (stage === 'describing') {
-    if (totalImages <= 0) return Math.max(previousProgress, 20)
+    if (totalImages <= 0) return Math.max(previousProgress, 25)
     const ratio = Math.max(0, Math.min(1, processedImages / totalImages))
-    return Math.round(20 + ratio * 60)
+    return Math.round(25 + ratio * 55)
   }
 
+  // 실패·중지 단계에서는 진행률을 되돌리지 않는다.
   return previousProgress
+}
+
+// 이미지 설명 속도를 재기 시작한 시점. 추출·OCR 시간이 섞이지 않게 따로 잡는다.
+type SpeedSample = { atMs: number; processed: number }
+
+function estimateRemainingSeconds(
+  response: BackendFileStatusResponse,
+  now: number,
+  startedAtMs: number,
+  sample: SpeedSample | null,
+): number | null {
+  const processed = response.processed_images
+  const total = response.total_images
+
+  // 이미지가 실제로 처리되고 있으면 이번 변환의 속도로 계산한다.
+  if (sample && total > 0 && processed > sample.processed) {
+    const perImage = (now - sample.atMs) / 1000 / (processed - sample.processed)
+    return Math.max(0, Math.round(perImage * (total - processed)))
+  }
+
+  // 그 전에는 백엔드가 준 과거 기록 기반 예상치에서 지난 시간을 뺀다.
+  if (response.estimated_seconds != null) {
+    return Math.max(0, Math.round(response.estimated_seconds - (now - startedAtMs) / 1000))
+  }
+
+  return null
+}
+
+function smoothRemaining(previous: number | null, next: number | null): number | null {
+  if (next === null || previous === null) return next
+  // 남은 시간은 줄어드는 게 자연스럽다. 크게 늘어날 때만 새 값을 그대로 받는다.
+  return next > previous * 1.3 ? next : Math.min(previous, next)
+}
+
+function formatRemaining(seconds: number): string {
+  if (seconds < 60) return '남은 시간 1분 이내'
+  return `남은 시간 약 ${Math.round(seconds / 60)}분`
 }
 
 function mapErrorCodeToUserMessage(errorMessage: string): string {
@@ -257,6 +315,7 @@ function toPersistedState(state: ConversionState): PersistedConversionState {
     downloadUrl: state.downloadUrl,
     availableFormats: state.availableFormats,
     warnings: state.warnings,
+    startedAtMs: state.startedAtMs,
     errorMessage: state.errorMessage,
     errorUserMessage: state.errorUserMessage,
   }
@@ -286,6 +345,8 @@ function toConversionStateFromPersisted(persisted: PersistedConversionState): Co
     downloadUrl: persisted.downloadUrl,
     availableFormats: persisted.availableFormats ?? RESULT_FORMATS,
     warnings: persisted.warnings ?? [],
+    // 새로고침 뒤에도 같은 시작 시각을 써야 남은 시간이 이어진다.
+    startedAtMs: persisted.startedAtMs ?? null,
     errorMessage: persisted.errorMessage,
     errorUserMessage: persisted.errorUserMessage,
   }
@@ -405,6 +466,7 @@ function UploadSection() {
               status: 'error',
               currentStage: 'failed',
               progress: prevState.progress,
+              remainingSeconds: null,
               errorMessage: rawErrorMessage,
               errorUserMessage: mapErrorCodeToUserMessage(rawErrorMessage),
               isSubmitting: false,
@@ -420,6 +482,8 @@ function UploadSection() {
               downloadUrl: response.download_url,
               availableFormats: response.available_formats ?? RESULT_FORMATS,
               warnings: response.warnings ?? [],
+              speedSample: null,
+              remainingSeconds: null,
               errorMessage: '',
               errorUserMessage: '',
               isSubmitting: false,
@@ -433,11 +497,27 @@ function UploadSection() {
             prevState.progress,
           )
 
+          const now = Date.now()
+          const startedAtMs = prevState.startedAtMs ?? (Date.parse(response.created_at) || now)
+
+          // 이미지 설명이 시작되는 순간을 속도 측정 기준점으로 잡는다.
+          const speedSample =
+            prevState.speedSample ??
+            (response.current_stage === 'describing'
+              ? { atMs: now, processed: response.processed_images }
+              : null)
+
           return {
             ...prevState,
             status: 'converting',
             currentStage: response.current_stage,
             progress: Math.max(prevState.progress, nextProgress),
+            startedAtMs,
+            speedSample,
+            remainingSeconds: smoothRemaining(
+              prevState.remainingSeconds,
+              estimateRemainingSeconds(response, now, startedAtMs, speedSample),
+            ),
             errorMessage: '',
             errorUserMessage: '',
             isSubmitting: false,
@@ -530,6 +610,9 @@ function UploadSection() {
         fileId: uploadResponse.file_id,
         currentStage: uploadResponse.current_stage,
         progress: getProgressByStage(uploadResponse.current_stage, 0, 0, prevState.progress),
+        startedAtMs: Date.now(),
+        speedSample: null,
+        remainingSeconds: null,
         errorMessage: '',
         errorUserMessage: '',
         isSubmitting: false,
@@ -560,6 +643,9 @@ function UploadSection() {
             ...prevState,
             status: 'converting',
             currentStage: resumed.current_stage,
+            startedAtMs: Date.now(),
+            speedSample: null,
+            remainingSeconds: null,
             errorMessage: '',
             errorUserMessage: '',
             isSubmitting: false,
@@ -771,6 +857,9 @@ function UploadSection() {
             </div>
             <p className="progress-percent-text">{Math.round(conversionState.progress)}%</p>
             <p className="progress-stage-text">{getStageLabel(conversionState.currentStage)}</p>
+            {conversionState.remainingSeconds !== null && (
+              <p className="progress-eta-text">{formatRemaining(conversionState.remainingSeconds)}</p>
+            )}
 
             <button
               type="button"

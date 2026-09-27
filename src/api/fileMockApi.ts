@@ -91,6 +91,7 @@ export async function getFileStatus(fileId: string): Promise<BackendFileStatusRe
       download_url: demo.downloadUrl,
       error_message: null,
       warnings: [],
+      created_at: new Date(demo.startTime).toISOString(),
     }
   }
 
@@ -119,6 +120,7 @@ export async function getFileStatus(fileId: string): Promise<BackendFileStatusRe
     download_url: null,
     error_message: null,
     warnings: [],
+    created_at: new Date(demo.startTime).toISOString(),
   }
 }
 
