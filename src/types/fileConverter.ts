@@ -35,8 +35,11 @@ export type BackendFileStatusResponse = {
   result_ready: boolean
   download_url: string | null
   error_message: string | null
-  // txt 생성 시 국소 오류 경고 목록 (docs/txt_spec.md 4.2) — 검수 화면에 표시
+  // 완료 후 확인이 필요한 안내 목록 (docs/txt_spec.md 4) — 검수 화면에 표시
   warnings: string[]
+  // 실제로 받을 수 있는 형식. DOCX 생성만 실패하면 ['txt']
+  // 값이 없는 예전 응답·목업은 두 형식 모두 있는 것으로 본다.
+  available_formats?: ResultFileFormat[]
 }
 
 export type BackendFileListItemResponse = {
@@ -49,4 +52,5 @@ export type BackendFileListItemResponse = {
   created_at: string
   result_ready: boolean
   download_url: string | null
+  available_formats?: ResultFileFormat[]
 }

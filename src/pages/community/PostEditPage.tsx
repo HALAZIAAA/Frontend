@@ -2,53 +2,93 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
 import { getPost, updatePost } from '../../api/communityApi'
-import type { PostCategory } from '../../types/community'
+import { useAuth } from '../../lib/auth'
+import type { PostCategory, PostDetail } from '../../types/community'
 import '../../styles/community-write.css'
 
 function PostEditPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
 
   const postId = Number(id)
-  const post = getPost(postId)
-
+  const [post, setPost] = useState<PostDetail | null>(null)
+  const [loading, setLoading] = useState(true)
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<PostCategory>('질문')
   const [content, setContent] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (!post) return
-    setTitle(post.title)
-    setCategory(post.category)
-    setContent(post.content)
-  }, [post])
+    let cancelled = false
+    setLoading(true)
+
+    getPost(postId)
+      .then((detail) => {
+        if (cancelled) return
+        setPost(detail)
+        setTitle(detail.title)
+        setCategory(detail.category)
+        setContent(detail.content)
+      })
+      .catch(() => {
+        if (!cancelled) setPost(null)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [postId])
 
   const handleCancel = () => {
     navigate(-1)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
       alert('제목과 내용을 입력해주세요.')
       return
     }
 
-    updatePost(postId, {
-      title: title.trim(),
-      category,
-      content: content.trim(),
-    })
-
-    navigate(`/community/${postId}`)
+    setSubmitting(true)
+    try {
+      await updatePost(postId, {
+        title: title.trim(),
+        category,
+        content: content.trim(),
+      })
+      navigate(`/community/${postId}`)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '수정에 실패했습니다.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  if (!post) {
+  if (loading) {
     return (
       <div className="write-page">
         <Navbar menuItems={['파일 변환', '커뮤니티']} />
         <main className="write-main">
           <div className="post-detail-not-found">
-            <p>존재하지 않는 게시글입니다</p>
+            <p>불러오는 중...</p>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  // 없는 글이거나 남의 글이면 폼을 아예 보여주지 않는다. (서버도 403으로 막는다)
+  if (!post || !post.isMine) {
+    return (
+      <div className="write-page">
+        <Navbar menuItems={['파일 변환', '커뮤니티']} />
+        <main className="write-main">
+          <div className="post-detail-not-found">
+            <p>{post ? '본인이 작성한 글만 수정할 수 있습니다.' : '존재하지 않는 게시글입니다'}</p>
             <Link to="/community">목록으로</Link>
           </div>
         </main>
@@ -93,7 +133,9 @@ function PostEditPage() {
                 value={category}
                 onChange={(e) => setCategory(e.target.value as PostCategory)}
               >
-                <option value="공지">공지</option>
+                {(user?.role === 'admin' || category === '공지') && (
+                  <option value="공지">공지</option>
+                )}
                 <option value="질문">질문</option>
                 <option value="팁">팁</option>
                 <option value="후기">후기</option>
@@ -117,8 +159,13 @@ function PostEditPage() {
               <button type="button" className="write-cancel-button" onClick={handleCancel}>
                 수정 취소
               </button>
-              <button type="button" className="write-submit-button" onClick={handleSubmit}>
-                수정 완료
+              <button
+                type="button"
+                className="write-submit-button"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? '수정 중...' : '수정 완료'}
               </button>
             </div>
           </div>

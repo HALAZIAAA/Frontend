@@ -1,6 +1,7 @@
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import MyPage from './pages/MyPage'
 import CommunityPage from './pages/community/CommunityPage'
 import PostDetailPage from './pages/community/PostDetailPage'
 import PostEditPage from './pages/community/PostEditPage'
@@ -13,6 +14,7 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/mypage" element={<MyPage />} />
       <Route path="/community" element={<CommunityPage />} />
       <Route path="/community/write" element={<PostWritePage />} />
       <Route path="/community/:id/edit" element={<PostEditPage />} />

@@ -1,0 +1,140 @@
+.mypage-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 4rem;
+}
+
+.mypage-title {
+  margin: 0 0 1.5rem;
+  color: #111827;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.mypage-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  background-color: #ffffff;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.mypage-section-title {
+  margin: 0 0 1rem;
+  color: #111827;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.mypage-section-hint {
+  margin: -0.5rem 0 1rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.mypage-info-list {
+  margin: 0;
+}
+
+.mypage-info-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.mypage-info-row:last-child {
+  border-bottom: none;
+}
+
+.mypage-info-row dt {
+  width: 6rem;
+  flex-shrink: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.mypage-info-row dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #111827;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.mypage-admin-badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.4rem;
+  background-color: #eef2ff;
+  color: #4338ca;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.mypage-form {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.mypage-input {
+  flex: 1;
+  min-width: 0;
+  height: 3rem;
+  padding: 0 0.9rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.65rem;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.mypage-input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.mypage-input[aria-invalid='true'] {
+  border-color: #ef4444;
+}
+
+.mypage-save-button {
+  flex-shrink: 0;
+  height: 3rem;
+  padding: 0 1.4rem;
+  border: none;
+  border-radius: 0.65rem;
+  background-color: #4f46e5;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.mypage-save-button:hover:not(:disabled) {
+  background-color: #4338ca;
+}
+
+.mypage-save-button:disabled {
+  background-color: #a5b4fc;
+  cursor: not-allowed;
+}
+
+.mypage-message {
+  margin: 0.8rem 0 0;
+  color: #059669;
+  font-size: 0.9rem;
+}
+
+.mypage-message.error {
+  color: #dc2626;
+}
+
+@media (max-width: 480px) {
+  .mypage-form {
+    flex-direction: column;
+  }
+}

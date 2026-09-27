@@ -1,13 +1,14 @@
 import { useState, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { likePost } from '../../api/communityApi'
-import type { Post } from '../../types/community'
+import { useAuth } from '../../lib/auth'
+import type { PostSummary } from '../../types/community'
 
 type PostCardProps = {
-  post: Post
+  post: PostSummary
 }
 
-function getCategoryBadgeClass(category: Post['category']): string {
+function getCategoryBadgeClass(category: PostSummary['category']): string {
   if (category === '질문') return 'post-card-category-badge question'
   if (category === '팁') return 'post-card-category-badge tip'
   if (category === '공지') return 'post-card-category-badge notice'
@@ -16,17 +17,29 @@ function getCategoryBadgeClass(category: Post['category']): string {
 
 function PostCard({ post }: PostCardProps) {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [likes, setLikes] = useState(post.likes)
+  const [liked, setLiked] = useState(post.likedByMe)
 
   const handleClick = () => {
     navigate(`/community/${post.id}`)
   }
 
-  const handleLikeClick = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleLikeClick = async (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation()
-    const updated = likePost(post.id)
-    if (updated) {
-      setLikes(updated.likes)
+
+    if (!user) {
+      alert('로그인이 필요합니다.')
+      navigate('/login')
+      return
+    }
+
+    try {
+      const result = await likePost(post.id)
+      setLikes(result.likes)
+      setLiked(result.likedByMe)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '좋아요에 실패했습니다.')
     }
   }
 
@@ -47,10 +60,14 @@ function PostCard({ post }: PostCardProps) {
         </span>
         <span className="post-card-stats">
           <span>👁 {post.views}</span>
-          <button type="button" className="post-card-like-button" onClick={handleLikeClick}>
+          <button
+            type="button"
+            className={liked ? 'post-card-like-button liked' : 'post-card-like-button'}
+            onClick={handleLikeClick}
+          >
             👍 좋아요 {likes}
           </button>
-          <span>💬 {post.comments.length}</span>
+          <span>💬 {post.commentCount}</span>
         </span>
       </div>
     </article>
@@ -58,4 +75,3 @@ function PostCard({ post }: PostCardProps) {
 }
 
 export default PostCard
-

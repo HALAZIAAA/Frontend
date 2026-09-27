@@ -83,6 +83,12 @@
   font-size: 1rem;
   font-weight: 600;
   color: #111827;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.navbar-user-name:hover {
+  text-decoration: underline;
 }
 
 .navbar-logout-button {

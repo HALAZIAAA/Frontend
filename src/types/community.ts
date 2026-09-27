@@ -4,23 +4,34 @@ export type SortType = 'latest' | 'popular'
 export interface Comment {
   id: number
   author: string
-  createdAt: string // "YYYY-MM-DD HH:mm"
+  authorId: number
+  createdAt: string // "YYYY-MM-DD HH:mm" (한국시간)
   content: string
   likes: number
+  likedByMe: boolean
+  isMine: boolean
   parentId: number | null
 }
 
-export interface Post {
+// 목록 카드에 쓰는 형태. 본문과 댓글은 상세에서만 온다.
+export interface PostSummary {
   id: number
   category: PostCategory
   isHot: boolean
   title: string
   preview: string
-  content: string
   author: string
-  createdAt: string // "YYYY-MM-DD"
+  authorId: number
+  createdAt: string // "YYYY-MM-DD" (한국시간)
   views: number
   likes: number
+  likedByMe: boolean
+  isMine: boolean
+  commentCount: number
+}
+
+export interface PostDetail extends PostSummary {
+  content: string
   comments: Comment[]
 }
 
@@ -29,10 +40,11 @@ export interface GetPostsParams {
   sort?: SortType
   page?: number
   keyword?: string
+  author?: 'me'
 }
 
 export interface GetPostsResult {
-  posts: Post[]
+  posts: PostSummary[]
   totalPages: number
   currentPage: number
 }

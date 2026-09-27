@@ -230,6 +230,12 @@
   padding: 0;
 }
 
+/* 내가 이미 좋아요를 누른 상태 */
+.post-card-like-button.liked {
+  color: #2563eb;
+  font-weight: 600;
+}
+
 .pagination {
   display: flex;
   justify-content: center;

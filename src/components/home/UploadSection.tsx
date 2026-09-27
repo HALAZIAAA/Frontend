@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 // [DEMO] 데모 복원 시 아래 fileApi import 를 주석 처리하고 fileMockApi import 주석 해제
 // import { getFileStatus, getRecentFiles, uploadFile } from '../../api/fileMockApi'
-import { BACKEND_ORIGIN, cancelFile, deleteFile, getFileStatus, getRecentFiles, uploadFile } from '../../api/fileApi'
+import {
+  BACKEND_ORIGIN,
+  cancelFile,
+  deleteFile,
+  getFileStatus,
+  getRecentFiles,
+  retryFile,
+  uploadFile,
+} from '../../api/fileApi'
 import { useAuth } from '../../lib/auth'
 // [DEMO] 슬라이드 이미지 — 데모 복원 시 주석 해제
 // import { DEMO_SLIDES } from '../../lib/demoSlides'
@@ -18,6 +26,7 @@ type ConversionState = {
   currentStage: BackendFileStage
   progress: number
   downloadUrl: string | null
+  availableFormats: ResultFileFormat[]
   warnings: string[]
   errorMessage: string
   errorUserMessage: string
@@ -32,6 +41,7 @@ type PersistedConversionState = {
   currentStage: BackendFileStage
   progress: number
   downloadUrl: string | null
+  availableFormats: ResultFileFormat[]
   warnings: string[]
   errorMessage: string
   errorUserMessage: string
@@ -46,16 +56,20 @@ const DEFAULT_STATE: ConversionState = {
   currentStage: 'uploaded',
   progress: 0,
   downloadUrl: null,
+  availableFormats: [],
   warnings: [],
   errorMessage: '',
   errorUserMessage: '',
   isSubmitting: false,
 }
 
+// 백엔드가 available_formats 를 주지 않으면(예전 응답·목업) 둘 다 있는 것으로 본다.
+const RESULT_FORMATS: ResultFileFormat[] = ['docx', 'txt']
+
 const POLLING_INTERVAL_MS = 1500
 const STORAGE_KEY = 'file_converter_upload_state_v2'
 
-type ConvertedFileStatusLabel = '완료' | '변환 중' | '실패' | '변환 중지'
+type ConvertedFileStatusLabel = '완료' | '일부 완료' | '변환 중' | '실패' | '변환 중지'
 type ConvertedFileStatusVariant = 'done' | 'processing' | 'failed' | 'cancelled'
 
 function getStageLabel(stage: BackendFileStage): string {
@@ -99,9 +113,13 @@ function mapErrorCodeToUserMessage(errorMessage: string): string {
   const normalizedCode = rawCode.trim()
   const codeMap: Record<string, string> = {
     EXTRACTION_FAILED: '파일 내용 추출 중 오류가 발생했습니다.',
-    AI_REQUEST_FAILED: '이미지 설명 생성 중 오류가 발생했습니다.',
+    OCR_FAILED: 'AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+    REFINE_REQUEST_FAILED: 'AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+    POSTPROCESS_FAILED: 'AI 분석은 끝났지만 결과 파일을 만드는 중 오류가 발생했습니다.',
+    TXT_GENERATION_FAILED: 'AI 분석은 끝났지만 결과 파일을 만드는 중 오류가 발생했습니다.',
+    TXT_WRITE_FAILED: 'AI 분석은 끝났지만 결과 파일을 저장하지 못했습니다.',
+    // 예전 기록에만 남는 코드. 지금은 DOCX만 실패하면 TXT를 제공한다.
     DOCX_GENERATION_FAILED: '문서 생성 중 오류가 발생했습니다.',
-    TXT_GENERATION_FAILED: '텍스트(TXT) 결과 생성 중 오류가 발생했습니다.',
     PIPELINE_FAILED: '변환 처리 중 오류가 발생했습니다.',
   }
   return codeMap[normalizedCode] ?? '변환 중 오류가 발생했습니다.'
@@ -136,6 +154,14 @@ function sortRecentFiles(items: BackendFileListItemResponse[]): BackendFileListI
   })
 }
 
+function availableFormatsOf(item: BackendFileListItemResponse): ResultFileFormat[] {
+  return item.available_formats ?? RESULT_FORMATS
+}
+
+function canDownloadFormat(item: BackendFileListItemResponse, format: ResultFileFormat): boolean {
+  return Boolean(item.download_url) && availableFormatsOf(item).includes(format)
+}
+
 function getConvertedFileStatusMeta(item: BackendFileListItemResponse): {
   label: ConvertedFileStatusLabel
   variant: ConvertedFileStatusVariant
@@ -151,6 +177,9 @@ function getConvertedFileStatusMeta(item: BackendFileListItemResponse): {
     return { label: '변환 중지', variant: 'cancelled' }
   }
   if (item.status === 'done' && item.result_ready) {
+    if (!availableFormatsOf(item).includes('docx')) {
+      return { label: '일부 완료', variant: 'done' }
+    }
     return { label: '완료', variant: 'done' }
   }
   return { label: '변환 중', variant: 'processing' }
@@ -226,6 +255,7 @@ function toPersistedState(state: ConversionState): PersistedConversionState {
     currentStage: state.currentStage,
     progress: state.progress,
     downloadUrl: state.downloadUrl,
+    availableFormats: state.availableFormats,
     warnings: state.warnings,
     errorMessage: state.errorMessage,
     errorUserMessage: state.errorUserMessage,
@@ -254,6 +284,7 @@ function toConversionStateFromPersisted(persisted: PersistedConversionState): Co
     currentStage: persisted.currentStage,
     progress: persisted.progress,
     downloadUrl: persisted.downloadUrl,
+    availableFormats: persisted.availableFormats ?? RESULT_FORMATS,
     warnings: persisted.warnings ?? [],
     errorMessage: persisted.errorMessage,
     errorUserMessage: persisted.errorUserMessage,
@@ -387,6 +418,7 @@ function UploadSection() {
               currentStage: 'completed',
               progress: 100,
               downloadUrl: response.download_url,
+              availableFormats: response.available_formats ?? RESULT_FORMATS,
               warnings: response.warnings ?? [],
               errorMessage: '',
               errorUserMessage: '',
@@ -517,6 +549,29 @@ function UploadSection() {
   }
 
   const handleRetry = async (): Promise<void> => {
+    // 저장된 추출·이미지 설명·원고를 재사용해 AI 호출을 줄인다.
+    // 이어갈 수 없으면 아래에서 파일을 새로 올린다.
+    if (conversionState.fileId) {
+      try {
+        const resumed = await retryFile(conversionState.fileId)
+
+        if (resumed) {
+          setConversionState((prevState) => ({
+            ...prevState,
+            status: 'converting',
+            currentStage: resumed.current_stage,
+            errorMessage: '',
+            errorUserMessage: '',
+            isSubmitting: false,
+          }))
+          void refreshConvertedFiles()
+          return
+        }
+      } catch {
+        // 이어서 시도하지 못하면 새 업로드로 넘어간다.
+      }
+    }
+
     if (!conversionState.selectedFile) {
       setConversionState(DEFAULT_STATE)
       return
@@ -735,12 +790,18 @@ function UploadSection() {
             <div className="result-icon success-icon" aria-hidden="true">
               ✓
             </div>
-            <h2 className="upload-box-title">변환 완료!</h2>
-            <p className="upload-box-support-text">파일이 성공적으로 변환되었습니다</p>
+            <h2 className="upload-box-title">
+              {conversionState.availableFormats.includes('docx') ? '변환 완료!' : 'TXT만 생성됨'}
+            </h2>
+            <p className="upload-box-support-text">
+              {conversionState.availableFormats.includes('docx')
+                ? '파일이 성공적으로 변환되었습니다'
+                : 'DOCX 파일을 만들지 못했습니다. TXT 파일만 받을 수 있습니다.'}
+            </p>
 
             {conversionState.warnings.length > 0 && (
               <div className="conversion-warning-box" role="status">
-                <p className="conversion-warning-title">TXT 검수 확인 필요</p>
+                <p className="conversion-warning-title">확인 필요</p>
                 <ul className="conversion-warning-list">
                   {conversionState.warnings.map((warning) => (
                     <li key={warning}>{warning}</li>
@@ -753,6 +814,7 @@ function UploadSection() {
               <button
                 type="button"
                 className="convert-start-button"
+                disabled={!conversionState.availableFormats.includes('docx')}
                 onClick={() => {
                   void handleDownload('docx')
                 }}
@@ -762,6 +824,7 @@ function UploadSection() {
               <button
                 type="button"
                 className="convert-start-button"
+                disabled={!conversionState.availableFormats.includes('txt')}
                 onClick={() => {
                   void handleDownload('txt')
                 }}
@@ -817,7 +880,8 @@ function UploadSection() {
           <ul className="converted-file-list" aria-label="변환된 파일 목록">
             {convertedFiles.map((item) => {
               const statusMeta = getConvertedFileStatusMeta(item)
-              const isDownloadEnabled = Boolean(item.download_url)
+              const isDocxEnabled = canDownloadFormat(item, 'docx')
+              const isTxtEnabled = canDownloadFormat(item, 'txt')
               return (
                 <li key={item.file_id} className="converted-file-list-item">
                   <div className="converted-file-main">
@@ -872,8 +936,8 @@ function UploadSection() {
                       type="button"
                       className="converted-file-action-button"
                       aria-label={`${item.original_name} DOCX 다운로드`}
-                      data-tooltip="DOCX 다운로드"
-                      disabled={!isDownloadEnabled}
+                      data-tooltip={isDocxEnabled ? 'DOCX 다운로드' : 'DOCX 파일 없음'}
+                      disabled={!isDocxEnabled}
                       onClick={() => {
                         void handleListItemDownload(item, 'docx')
                       }}
@@ -893,8 +957,8 @@ function UploadSection() {
                       type="button"
                       className="converted-file-action-button txt-download-button"
                       aria-label={`${item.original_name} TXT 다운로드`}
-                      data-tooltip="TXT 다운로드"
-                      disabled={!isDownloadEnabled}
+                      data-tooltip={isTxtEnabled ? 'TXT 다운로드' : 'TXT 파일 없음'}
+                      disabled={!isTxtEnabled}
                       onClick={() => {
                         void handleListItemDownload(item, 'txt')
                       }}

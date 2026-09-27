@@ -48,7 +48,9 @@ function Navbar({ menuItems }: NavbarProps) {
         <div className="navbar-action-area">
           {user ? (
             <>
-              <span className="navbar-user-name">{user.name}</span>
+              <Link to="/mypage" className="navbar-user-name" aria-label="마이페이지로 이동">
+                {user.nickname}
+              </Link>
               <button type="button" className="navbar-logout-button" onClick={handleLogout}>
                 로그아웃
               </button>

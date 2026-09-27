@@ -1,36 +1,52 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
 import { createPost } from '../../api/communityApi'
-import { CURRENT_USER } from '../../lib/currentUser'
+import { useAuth } from '../../lib/auth'
 import type { PostCategory } from '../../types/community'
 import '../../styles/community-write.css'
 
 function PostWritePage() {
   const navigate = useNavigate()
+  const { user, loading } = useAuth()
 
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<PostCategory>('질문')
   const [content, setContent] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  // 세션 복원 중에는 판단을 미룬다. (새로고침 때 로그인으로 튕기는 것 방지)
+  if (loading) {
+    return null
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
 
   const handleCancel = () => {
     navigate('/community')
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
       alert('제목과 내용을 입력해주세요.')
       return
     }
 
-    createPost({
-      title: title.trim(),
-      category,
-      content: content.trim(),
-      author: CURRENT_USER.name,
-    })
-
-    navigate('/community')
+    setSubmitting(true)
+    try {
+      const created = await createPost({
+        title: title.trim(),
+        category,
+        content: content.trim(),
+      })
+      navigate(`/community/${created.id}`)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '글 등록에 실패했습니다.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -70,7 +86,8 @@ function PostWritePage() {
                 value={category}
                 onChange={(e) => setCategory(e.target.value as PostCategory)}
               >
-                <option value="공지">공지</option>
+                {/* 공지는 관리자만 쓸 수 있어서 그 외에는 아예 보여주지 않는다. */}
+                {user.role === 'admin' && <option value="공지">공지</option>}
                 <option value="질문">질문</option>
                 <option value="팁">팁</option>
                 <option value="후기">후기</option>
@@ -94,8 +111,13 @@ function PostWritePage() {
               <button type="button" className="write-cancel-button" onClick={handleCancel}>
                 작성 취소
               </button>
-              <button type="button" className="write-submit-button" onClick={handleSubmit}>
-                등록
+              <button
+                type="button"
+                className="write-submit-button"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? '등록 중...' : '등록'}
               </button>
             </div>
           </div>

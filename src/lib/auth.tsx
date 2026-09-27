@@ -1,5 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { apiGoogleLogin, apiLogin, apiLogout, apiMe, apiSignup, type AuthUser } from '../api/authApi'
+import {
+  apiGoogleLogin,
+  apiLogin,
+  apiLogout,
+  apiMe,
+  apiSignup,
+  apiUpdateNickname,
+  type AuthUser,
+} from '../api/authApi'
 
 type AuthResult = { ok: boolean; error?: string }
 
@@ -8,7 +16,8 @@ type AuthContextValue = {
   loading: boolean
   login: (email: string, password: string) => Promise<AuthResult>
   loginWithGoogle: (credential: string) => Promise<AuthResult>
-  signup: (name: string, email: string, password: string) => Promise<AuthResult>
+  signup: (email: string, password: string) => Promise<AuthResult>
+  updateNickname: (nickname: string) => Promise<AuthResult>
   logout: () => Promise<void>
 }
 
@@ -52,19 +61,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signup = async (
-    name: string,
-    email: string,
-    password: string,
-  ): Promise<AuthResult> => {
+  const signup = async (email: string, password: string): Promise<AuthResult> => {
     try {
-      const me = await apiSignup(name, email, password)
+      const me = await apiSignup(email, password)
       setUser(me) // 가입 즉시 자동 로그인 (백엔드가 쿠키 발급)
       return { ok: true }
     } catch (error) {
       return {
         ok: false,
         error: error instanceof Error ? error.message : '회원가입에 실패했습니다.',
+      }
+    }
+  }
+
+  const updateNickname = async (nickname: string): Promise<AuthResult> => {
+    try {
+      const me = await apiUpdateNickname(nickname)
+      setUser(me)
+      return { ok: true }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : '닉네임 변경에 실패했습니다.',
       }
     }
   }
@@ -78,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, updateNickname, logout }}>
       {children}
     </AuthContext.Provider>
   )

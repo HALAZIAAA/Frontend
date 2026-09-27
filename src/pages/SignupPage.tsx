@@ -8,14 +8,12 @@ import '../styles/navbar.css'
 import '../styles/auth.css'
 
 type SignupFormState = {
-  name: string
   email: string
   password: string
   confirmPassword: string
 }
 
 type SignupFormErrors = {
-  name?: string
   email?: string
   password?: string
   confirmPassword?: string
@@ -25,7 +23,6 @@ function SignupPage() {
   const { signup } = useAuth()
   const navigate = useNavigate()
   const [formState, setFormState] = useState<SignupFormState>({
-    name: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -46,9 +43,6 @@ function SignupPage() {
 
   const validate = (): SignupFormErrors => {
     const nextErrors: SignupFormErrors = {}
-    if (!formState.name.trim()) {
-      nextErrors.name = '이름을 입력해주세요.'
-    }
     if (!formState.email.trim()) {
       nextErrors.email = '이메일을 입력해주세요.'
     }
@@ -72,7 +66,7 @@ function SignupPage() {
       return
     }
 
-    const result = await signup(formState.name, formState.email, formState.password)
+    const result = await signup(formState.email, formState.password)
     if (result.ok) {
       navigate('/') // 가입 즉시 자동 로그인 → 홈으로
     } else {
@@ -90,21 +84,6 @@ function SignupPage() {
       <AuthDivider />
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
-        <label className="auth-field-label" htmlFor="signup-name">
-          이름
-        </label>
-        <input
-          id="signup-name"
-          name="name"
-          type="text"
-          className="auth-input"
-          value={formState.name}
-          onChange={handleChange('name')}
-          placeholder="홍길동"
-          aria-invalid={Boolean(errors.name)}
-        />
-        {errors.name && <p className="auth-error-message">{errors.name}</p>}
-
         <label className="auth-field-label" htmlFor="signup-email">
           이메일
         </label>

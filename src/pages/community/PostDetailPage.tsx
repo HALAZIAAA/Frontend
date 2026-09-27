@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
 import { addComment, deletePost, getPost, likeComment, likePost } from '../../api/communityApi'
-import { CURRENT_USER } from '../../lib/currentUser'
-import type { Comment, Post } from '../../types/community'
+import { useAuth } from '../../lib/auth'
+import type { Comment, PostDetail } from '../../types/community'
 import '../../styles/navbar.css'
 import '../../styles/community-detail.css'
 
-function getCategoryBadgeClass(category: Post['category']): string {
+function getCategoryBadgeClass(category: PostDetail['category']): string {
   if (category === '질문') return 'post-detail-category-badge question'
   if (category === '팁') return 'post-detail-category-badge tip'
   if (category === '공지') return 'post-detail-category-badge notice'
@@ -17,18 +17,33 @@ function getCategoryBadgeClass(category: Post['category']): string {
 function PostDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const numericId = Number(id)
-  const [post, setPost] = useState<Post | null>(null)
+  const [post, setPost] = useState<PostDetail | null>(null)
+  const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
   const [showCommentInput, setShowCommentInput] = useState(false)
   const [replyTargetId, setReplyTargetId] = useState<number | null>(null)
   const [replyContent, setReplyContent] = useState('')
 
   useEffect(() => {
-    const initial = getPost(numericId)
-    if (initial) {
-      setPost(initial)
+    let cancelled = false
+    setLoading(true)
+
+    getPost(numericId)
+      .then((detail) => {
+        if (!cancelled) setPost(detail)
+      })
+      .catch(() => {
+        if (!cancelled) setPost(null)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
     }
   }, [numericId])
 
@@ -49,71 +64,118 @@ function PostDetailPage() {
     return map
   }, [post])
 
+  // 로그인이 필요한 동작 앞에서 문지기 역할을 한다.
+  const requireLogin = (): boolean => {
+    if (user) return true
+    alert('로그인이 필요합니다.')
+    navigate('/login')
+    return false
+  }
+
   const handleEdit = () => {
     navigate(`/community/${id}/edit`)
   }
 
-  const handleDelete = () => {
-    if (window.confirm('정말 삭제하시겠습니까?')) {
-      deletePost(Number(id))
+  const handleDelete = async () => {
+    if (!window.confirm('정말 삭제하시겠습니까?')) return
+
+    try {
+      await deletePost(numericId)
       navigate('/community')
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '삭제에 실패했습니다.')
     }
   }
 
-  const handlePostLike = () => {
-    const updated = likePost(numericId)
-    if (updated) {
-      setPost(updated)
+  const handlePostLike = async () => {
+    if (!requireLogin() || !post) return
+
+    try {
+      const result = await likePost(numericId)
+      setPost({ ...post, likes: result.likes, likedByMe: result.likedByMe })
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '좋아요에 실패했습니다.')
     }
   }
 
-  const handleCommentSubmit = () => {
+  const handleCommentSubmit = async () => {
+    if (!requireLogin()) return
     if (!newComment.trim()) {
       alert('댓글 내용을 입력해주세요.')
       return
     }
-    const updated = addComment({
-      postId: numericId,
-      content: newComment.trim(),
-      author: CURRENT_USER.name,
-      parentId: null,
-    })
-    if (updated) {
+
+    try {
+      const updated = await addComment({
+        postId: numericId,
+        content: newComment.trim(),
+        parentId: null,
+      })
       setPost(updated)
       setNewComment('')
       setShowCommentInput(false)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '댓글 등록에 실패했습니다.')
     }
   }
 
   const handleReplyClick = (commentId: number) => {
+    if (!requireLogin()) return
     setReplyTargetId(commentId)
     setReplyContent('')
   }
 
-  const handleReplySubmit = () => {
+  const handleReplySubmit = async () => {
     if (replyTargetId == null) return
+    if (!requireLogin()) return
     if (!replyContent.trim()) {
       alert('답글 내용을 입력해주세요.')
       return
     }
-    const updated = addComment({
-      postId: numericId,
-      content: replyContent.trim(),
-      author: CURRENT_USER.name,
-      parentId: replyTargetId,
-    })
-    if (updated) {
+
+    try {
+      const updated = await addComment({
+        postId: numericId,
+        content: replyContent.trim(),
+        parentId: replyTargetId,
+      })
       setPost(updated)
       setReplyContent('')
       setReplyTargetId(null)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '답글 등록에 실패했습니다.')
     }
   }
 
-  const handleCommentLike = (commentId: number) => {
-    const updated = likeComment(numericId, commentId)
-    if (updated) {
-      setPost(updated)
+  const handleCommentLike = async (commentId: number) => {
+    if (!requireLogin() || !post) return
+
+    try {
+      const result = await likeComment(commentId)
+      setPost({
+        ...post,
+        comments: post.comments.map((comment) =>
+          comment.id === commentId
+            ? { ...comment, likes: result.likes, likedByMe: result.likedByMe }
+            : comment,
+        ),
+      })
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '좋아요에 실패했습니다.')
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="post-detail-page">
+        <Navbar menuItems={['파일 변환', '커뮤니티']} />
+        <main className="post-detail-main">
+          <div className="post-detail-not-found">
+            <p>불러오는 중...</p>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   if (!post) {
@@ -142,22 +204,24 @@ function PostDetailPage() {
         <article className="post-detail-card">
           <div className="post-detail-card-header">
             <span className={getCategoryBadgeClass(post.category)}>{post.category}</span>
-            <div className="post-detail-actions">
-              <button
-                type="button"
-                className="post-detail-action-button edit"
-                onClick={handleEdit}
-              >
-                ✏ 수정
-              </button>
-              <button
-                type="button"
-                className="post-detail-action-button delete"
-                onClick={handleDelete}
-              >
-                🗑 삭제
-              </button>
-            </div>
+            {post.isMine && (
+              <div className="post-detail-actions">
+                <button
+                  type="button"
+                  className="post-detail-action-button edit"
+                  onClick={handleEdit}
+                >
+                  ✏ 수정
+                </button>
+                <button
+                  type="button"
+                  className="post-detail-action-button delete"
+                  onClick={handleDelete}
+                >
+                  🗑 삭제
+                </button>
+              </div>
+            )}
           </div>
 
           <h2 className="post-detail-title">{post.title}</h2>
@@ -181,7 +245,7 @@ function PostDetailPage() {
           <div className="post-detail-action-bar">
             <button
               type="button"
-              className="post-action-button like"
+              className={`post-action-button like${post.likedByMe ? ' liked' : ''}`}
               onClick={handlePostLike}
             >
               👍 좋아요 {post.likes}
@@ -242,7 +306,9 @@ function PostDetailPage() {
                   <div className="comment-actions">
                     <button
                       type="button"
-                      className="comment-action-button"
+                      className={
+                        comment.likedByMe ? 'comment-action-button liked' : 'comment-action-button'
+                      }
                       onClick={() => handleCommentLike(comment.id)}
                     >
                       👍 좋아요 {comment.likes}
@@ -266,7 +332,9 @@ function PostDetailPage() {
                       <div className="comment-actions">
                         <button
                           type="button"
-                          className="comment-action-button"
+                          className={
+                            reply.likedByMe ? 'comment-action-button liked' : 'comment-action-button'
+                          }
                           onClick={() => handleCommentLike(reply.id)}
                         >
                           👍 좋아요 {reply.likes}

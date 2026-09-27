@@ -5,7 +5,8 @@ const AUTH_BASE = `${BACKEND_ORIGIN}/api/v1/auth`
 export type AuthUser = {
   id: number
   email: string
-  name: string | null
+  nickname: string
+  role: string
   provider: string
 }
 
@@ -18,16 +19,12 @@ async function parseError(res: Response): Promise<string> {
   }
 }
 
-export async function apiSignup(
-  name: string,
-  email: string,
-  password: string,
-): Promise<AuthUser> {
+export async function apiSignup(email: string, password: string): Promise<AuthUser> {
   const res = await fetch(`${AUTH_BASE}/signup`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ email, password }),
   })
   if (!res.ok) throw new Error(await parseError(res))
   return (await res.json()) as AuthUser
@@ -69,6 +66,17 @@ export async function apiMe(): Promise<AuthUser | null> {
     credentials: 'include',
   })
   if (res.status === 401) return null
+  if (!res.ok) throw new Error(await parseError(res))
+  return (await res.json()) as AuthUser
+}
+
+export async function apiUpdateNickname(nickname: string): Promise<AuthUser> {
+  const res = await fetch(`${AUTH_BASE}/me/nickname`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nickname }),
+  })
   if (!res.ok) throw new Error(await parseError(res))
   return (await res.json()) as AuthUser
 }

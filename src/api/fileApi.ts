@@ -77,6 +77,29 @@ export async function deleteFile(fileId: string): Promise<void> {
   }
 }
 
+/**
+ * 실패한 변환을 같은 file_id로 이어서 다시 시도한다.
+ * 저장된 추출·이미지 설명·원고를 재사용하므로 AI를 다시 호출하지 않는다.
+ * 이어갈 수 없으면(만료 404, 실패 상태가 아님 409) null을 돌려준다.
+ */
+export async function retryFile(fileId: string): Promise<BackendFileProcessResponse | null> {
+  const response = await fetch(`${API_BASE}/${encodeURIComponent(fileId)}/retry`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+
+  if (response.status === 404 || response.status === 409) {
+    return null
+  }
+
+  if (!response.ok) {
+    const errorMessage = await parseErrorResponse(response)
+    throw new Error(errorMessage)
+  }
+
+  return (await response.json()) as BackendFileProcessResponse
+}
+
 export type CancelResult = { file_id: string; status: string; message: string }
 
 export async function cancelFile(fileId: string): Promise<CancelResult> {
