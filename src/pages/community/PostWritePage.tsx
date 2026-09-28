@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
+import ImageAttacher from '../../components/community/ImageAttacher'
 import { createPost } from '../../api/communityApi'
 import { useAuth } from '../../lib/auth'
-import type { PostCategory } from '../../types/community'
+import type { PostCategory, PostImage } from '../../types/community'
 import '../../styles/community-write.css'
 
 function PostWritePage() {
@@ -13,6 +14,7 @@ function PostWritePage() {
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<PostCategory>('질문')
   const [content, setContent] = useState('')
+  const [images, setImages] = useState<PostImage[]>([])
   const [submitting, setSubmitting] = useState(false)
 
   // 세션 복원 중에는 판단을 미룬다. (새로고침 때 로그인으로 튕기는 것 방지)
@@ -40,6 +42,7 @@ function PostWritePage() {
         title: title.trim(),
         category,
         content: content.trim(),
+        imageIds: images.map((image) => image.id),
       })
       navigate(`/community/${created.id}`)
     } catch (error) {
@@ -106,6 +109,8 @@ function PostWritePage() {
                 onChange={(e) => setContent(e.target.value)}
               />
             </div>
+
+            <ImageAttacher images={images} onChange={setImages} />
 
             <div className="write-actions">
               <button type="button" className="write-cancel-button" onClick={handleCancel}>

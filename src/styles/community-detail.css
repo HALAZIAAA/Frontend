@@ -364,3 +364,152 @@
   color: #2563eb;
   font-weight: 600;
 }
+
+/* 답글이 달린 채로 지워진 댓글 자리 */
+.comment-content.deleted {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.comment-action-button.delete:hover {
+  color: #dc2626;
+}
+
+/* ── 신고 모달 ── */
+.report-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.report-modal {
+  width: min(100%, 26rem);
+  background-color: #ffffff;
+  border-radius: 1rem;
+  padding: 1.4rem;
+  box-shadow: 0 20px 40px rgba(17, 24, 39, 0.25);
+}
+
+.report-title {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.report-reasons {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.report-legend {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.report-reason-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #374151;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.report-detail {
+  min-height: 5.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.6rem;
+  font-size: 0.92rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.report-detail:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.report-error {
+  margin: 0;
+  color: #dc2626;
+  font-size: 0.85rem;
+}
+
+.report-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.report-cancel,
+.report-submit {
+  padding: 0.5rem 1.1rem;
+  border-radius: 0.6rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.report-cancel {
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #4b5563;
+}
+
+.report-submit {
+  border: none;
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.report-submit:disabled {
+  background-color: #fca5a5;
+  cursor: not-allowed;
+}
+
+.post-action-button.report {
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  color: #374151;
+}
+
+.post-action-button.report:hover {
+  border-color: #ef4444;
+  color: #dc2626;
+}
+
+/* 본문 아래 첨부 이미지 */
+.post-detail-images {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin: 1.2rem 0 0;
+}
+
+.post-detail-images img {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 0.7rem;
+  border: 1px solid #e5e7eb;
+  display: block;
+}

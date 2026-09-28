@@ -1,11 +1,15 @@
 import { BACKEND_ORIGIN } from './fileApi'
 import { formatDate, formatDateTime } from '../lib/formatDate'
+import type { ReportReason, ReportTargetType } from '../types/report'
 import type {
   Comment,
   GetPostsParams,
   GetPostsResult,
+  MyComment,
+  MyCommentsResult,
   PostCategory,
   PostDetail,
+  PostImage,
   PostSummary,
 } from '../types/community'
 
@@ -15,12 +19,13 @@ const API_BASE = `${BACKEND_ORIGIN}/api/v1/community`
 type RawComment = {
   id: number
   author: string
-  author_id: number
+  author_id: number | null
   content: string
   created_at: string | null
   likes: number
   liked_by_me: boolean
   is_mine: boolean
+  is_deleted: boolean
   parent_id: number | null
 }
 
@@ -40,8 +45,14 @@ type RawPostSummary = {
   is_mine: boolean
 }
 
+type RawPostImage = {
+  id: number
+  url: string
+}
+
 type RawPostDetail = RawPostSummary & {
   content: string
+  images: RawPostImage[]
   comments: RawComment[]
 }
 
@@ -116,14 +127,21 @@ function toComment(raw: RawComment): Comment {
     likes: raw.likes,
     likedByMe: raw.liked_by_me,
     isMine: raw.is_mine,
+    isDeleted: raw.is_deleted,
     parentId: raw.parent_id,
   }
+}
+
+// 서버는 상대 경로를 준다. 백엔드 주소를 붙여야 <img>에서 바로 쓸 수 있다.
+function toImage(raw: RawPostImage): PostImage {
+  return { id: raw.id, url: `${BACKEND_ORIGIN}${raw.url}` }
 }
 
 function toDetail(raw: RawPostDetail): PostDetail {
   return {
     ...toSummary(raw),
     content: raw.content,
+    images: (raw.images ?? []).map(toImage),
     comments: raw.comments.map(toComment),
   }
 }
@@ -164,13 +182,33 @@ export async function createPost(data: {
   title: string
   category: PostCategory
   content: string
+  imageIds?: number[]
 }): Promise<PostDetail> {
   return toDetail(
     await request<RawPostDetail>('/posts', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        title: data.title,
+        category: data.category,
+        content: data.content,
+        image_ids: data.imageIds ?? [],
+      }),
     }),
   )
+}
+
+// 글을 저장하기 전에 이미지를 먼저 올려둔다. 돌려받은 id를 글과 함께 보낸다.
+export async function uploadPostImage(file: File): Promise<PostImage> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const res = await fetch(`${API_BASE}/images`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  })
+  if (!res.ok) throw new Error(await parseError(res))
+  return toImage((await res.json()) as RawPostImage)
 }
 
 export async function updatePost(
@@ -179,12 +217,18 @@ export async function updatePost(
     title: string
     category: PostCategory
     content: string
+    imageIds?: number[]
   },
 ): Promise<PostDetail> {
   return toDetail(
     await request<RawPostDetail>(`/posts/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        title: data.title,
+        category: data.category,
+        content: data.content,
+        image_ids: data.imageIds ?? [],
+      }),
     }),
   )
 }
@@ -214,8 +258,64 @@ export async function addComment(params: {
   )
 }
 
+// 답글이 달린 댓글은 지워도 '삭제된 댓글입니다' 자리가 남는다.
+export async function deleteComment(commentId: number): Promise<PostDetail> {
+  return toDetail(
+    await request<RawPostDetail>(`/comments/${commentId}`, { method: 'DELETE' }),
+  )
+}
+
 export async function likeComment(commentId: number): Promise<LikeResult> {
   return toLikeResult(
     await request<RawLike>(`/comments/${commentId}/like`, { method: 'POST' }),
   )
+}
+
+type RawMyComment = {
+  id: number
+  content: string
+  created_at: string | null
+  likes: number
+  post_id: number
+  post_title: string
+}
+
+function toMyComment(raw: RawMyComment): MyComment {
+  return {
+    id: raw.id,
+    content: raw.content,
+    createdAt: formatDateTime(raw.created_at),
+    likes: raw.likes,
+    postId: raw.post_id,
+    postTitle: raw.post_title,
+  }
+}
+
+// 마이페이지용. 내가 쓴 댓글을 최근 것부터 가져온다.
+export async function getMyComments(limit = 10): Promise<MyCommentsResult> {
+  const raw = await request<{ comments: RawMyComment[]; total: number }>(
+    `/comments?author=me&limit=${limit}`,
+  )
+  return {
+    comments: raw.comments.map(toMyComment),
+    total: raw.total,
+  }
+}
+
+// 신고 접수. 같은 대상을 두 번 신고하면 409가 온다.
+export async function createReport(params: {
+  targetType: ReportTargetType
+  targetId: number
+  reason: ReportReason
+  detail?: string
+}): Promise<void> {
+  await request<{ message: string }>('/reports', {
+    method: 'POST',
+    body: JSON.stringify({
+      target_type: params.targetType,
+      target_id: params.targetId,
+      reason: params.reason,
+      detail: params.detail?.trim() || null,
+    }),
+  })
 }

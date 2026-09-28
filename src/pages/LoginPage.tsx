@@ -128,9 +128,9 @@ function LoginPage() {
             />
             로그인 상태 유지
           </label>
-          <button type="button" className="auth-text-button">
+          <Link to="/forgot-password" className="auth-text-button">
             비밀번호 찾기
-          </button>
+          </Link>
         </div>
 
         <button type="submit" className="auth-primary-button">

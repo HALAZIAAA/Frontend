@@ -142,3 +142,116 @@
     margin-left: auto;
   }
 }
+
+/* ── 알림 벨 ── */
+.notification-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.notification-bell {
+  position: relative;
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0.2rem;
+  cursor: pointer;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.35rem;
+  min-width: 1.1rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background-color: #dc2626;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+  text-align: center;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: 2.4rem;
+  right: 0;
+  width: min(22rem, 80vw);
+  max-height: 24rem;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.8rem;
+  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.16);
+  z-index: 40;
+}
+
+.notification-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.notification-all-read {
+  border: none;
+  background: transparent;
+  color: #4f46e5;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notification-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: none;
+  border-bottom: 1px solid #f9fafb;
+  background-color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-item:hover {
+  background-color: #f9fafb;
+}
+
+/* 안 읽은 알림은 왼쪽에 파란 띠 */
+.notification-item.unread {
+  border-left: 3px solid #4f46e5;
+  background-color: #f5f3ff;
+}
+
+.notification-message {
+  color: #111827;
+  font-size: 0.88rem;
+}
+
+.notification-date {
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.notification-empty {
+  margin: 0;
+  padding: 1.2rem 0.9rem;
+  color: #9ca3af;
+  font-size: 0.88rem;
+  text-align: center;
+}

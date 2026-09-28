@@ -4,6 +4,8 @@ import {
   apiLogin,
   apiLogout,
   apiMe,
+  apiChangePassword,
+  apiDeleteAccount,
   apiSignup,
   apiUpdateNickname,
   type AuthUser,
@@ -18,6 +20,8 @@ type AuthContextValue = {
   loginWithGoogle: (credential: string) => Promise<AuthResult>
   signup: (email: string, password: string) => Promise<AuthResult>
   updateNickname: (nickname: string) => Promise<AuthResult>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>
+  deleteAccount: (password: string | null) => Promise<AuthResult>
   logout: () => Promise<void>
 }
 
@@ -87,6 +91,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const changePassword = async (
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<AuthResult> => {
+    try {
+      await apiChangePassword(currentPassword, newPassword)
+      return { ok: true }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : '비밀번호 변경에 실패했습니다.',
+      }
+    }
+  }
+
+  const deleteAccount = async (password: string | null): Promise<AuthResult> => {
+    try {
+      await apiDeleteAccount(password)
+      setUser(null) // 서버가 쿠키까지 비웠으니 바로 로그아웃 상태로
+      return { ok: true }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : '회원 탈퇴에 실패했습니다.',
+      }
+    }
+  }
+
   const logout = async (): Promise<void> => {
     try {
       await apiLogout()
@@ -96,7 +128,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, updateNickname, logout }}>
+    <AuthContext.Provider value={{
+        user,
+        loading,
+        login,
+        signup,
+        loginWithGoogle,
+        updateNickname,
+        changePassword,
+        deleteAccount,
+        logout,
+      }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,9 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
-import { addComment, deletePost, getPost, likeComment, likePost } from '../../api/communityApi'
+import {
+  addComment,
+  deleteComment,
+  deletePost,
+  getPost,
+  likeComment,
+  likePost,
+} from '../../api/communityApi'
+import ReportModal from '../../components/community/ReportModal'
 import { useAuth } from '../../lib/auth'
 import type { Comment, PostDetail } from '../../types/community'
+import type { ReportTargetType } from '../../types/report'
 import '../../styles/navbar.css'
 import '../../styles/community-detail.css'
 
@@ -26,6 +35,9 @@ function PostDetailPage() {
   const [showCommentInput, setShowCommentInput] = useState(false)
   const [replyTargetId, setReplyTargetId] = useState<number | null>(null)
   const [replyContent, setReplyContent] = useState('')
+  const [reportTarget, setReportTarget] = useState<
+    { type: ReportTargetType; id: number } | null
+  >(null)
 
   useEffect(() => {
     let cancelled = false
@@ -64,6 +76,9 @@ function PostDetailPage() {
     return map
   }, [post])
 
+  // 관리자는 남의 글도 지울 수 있다. (수정은 글쓴이 본인만)
+  const canModerate = user?.role === 'admin'
+
   // 로그인이 필요한 동작 앞에서 문지기 역할을 한다.
   const requireLogin = (): boolean => {
     if (user) return true
@@ -72,12 +87,20 @@ function PostDetailPage() {
     return false
   }
 
+  const openReport = (type: ReportTargetType, id: number) => {
+    if (!requireLogin()) return
+    setReportTarget({ type, id })
+  }
+
   const handleEdit = () => {
     navigate(`/community/${id}/edit`)
   }
 
   const handleDelete = async () => {
-    if (!window.confirm('정말 삭제하시겠습니까?')) return
+    const question = post?.isMine
+      ? '정말 삭제하시겠습니까?'
+      : '다른 사용자의 글입니다. 관리자 권한으로 삭제할까요?'
+    if (!window.confirm(question)) return
 
     try {
       await deletePost(numericId)
@@ -147,6 +170,19 @@ function PostDetailPage() {
     }
   }
 
+  const handleCommentDelete = async (comment: Comment) => {
+    const question = comment.isMine
+      ? '댓글을 삭제할까요?'
+      : '다른 사용자의 댓글입니다. 관리자 권한으로 삭제할까요?'
+    if (!window.confirm(question)) return
+
+    try {
+      setPost(await deleteComment(comment.id))
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '댓글 삭제에 실패했습니다.')
+    }
+  }
+
   const handleCommentLike = async (commentId: number) => {
     if (!requireLogin() || !post) return
 
@@ -204,15 +240,17 @@ function PostDetailPage() {
         <article className="post-detail-card">
           <div className="post-detail-card-header">
             <span className={getCategoryBadgeClass(post.category)}>{post.category}</span>
-            {post.isMine && (
+            {(post.isMine || canModerate) && (
               <div className="post-detail-actions">
-                <button
-                  type="button"
-                  className="post-detail-action-button edit"
-                  onClick={handleEdit}
-                >
-                  ✏ 수정
-                </button>
+                {post.isMine && (
+                  <button
+                    type="button"
+                    className="post-detail-action-button edit"
+                    onClick={handleEdit}
+                  >
+                    ✏ 수정
+                  </button>
+                )}
                 <button
                   type="button"
                   className="post-detail-action-button delete"
@@ -242,6 +280,14 @@ function PostDetailPage() {
 
           <p className="post-detail-content">{post.content}</p>
 
+          {post.images.length > 0 && (
+            <div className="post-detail-images">
+              {post.images.map((image) => (
+                <img key={image.id} src={image.url} alt="첨부 이미지" loading="lazy" />
+              ))}
+            </div>
+          )}
+
           <div className="post-detail-action-bar">
             <button
               type="button"
@@ -257,6 +303,15 @@ function PostDetailPage() {
             >
               💬 댓글 작성
             </button>
+            {!post.isMine && (
+              <button
+                type="button"
+                className="post-action-button report"
+                onClick={() => openReport('post', post.id)}
+              >
+                🚩 신고
+              </button>
+            )}
           </div>
 
           {showCommentInput && (
@@ -299,47 +354,107 @@ function PostDetailPage() {
               {topLevelComments.map((comment) => (
                 <li key={comment.id} className="comment-item">
                   <div className="comment-item-header">
-                    <span className="comment-author">{comment.author}</span>
+                    <span className="comment-author">
+                      {comment.isDeleted ? '' : comment.author}
+                    </span>
                     <span className="comment-date">{comment.createdAt}</span>
                   </div>
-                  <p className="comment-content">{comment.content}</p>
-                  <div className="comment-actions">
-                    <button
-                      type="button"
-                      className={
-                        comment.likedByMe ? 'comment-action-button liked' : 'comment-action-button'
-                      }
-                      onClick={() => handleCommentLike(comment.id)}
-                    >
-                      👍 좋아요 {comment.likes}
-                    </button>
-                    <button
-                      type="button"
-                      className="comment-action-button"
-                      onClick={() => handleReplyClick(comment.id)}
-                    >
-                      💬 답글 달기
-                    </button>
-                  </div>
+                  <p
+                    className={
+                      comment.isDeleted ? 'comment-content deleted' : 'comment-content'
+                    }
+                  >
+                    {comment.content}
+                  </p>
+                  {!comment.isDeleted && (
+                    <div className="comment-actions">
+                      <button
+                        type="button"
+                        className={
+                          comment.likedByMe
+                            ? 'comment-action-button liked'
+                            : 'comment-action-button'
+                        }
+                        onClick={() => handleCommentLike(comment.id)}
+                      >
+                        👍 좋아요 {comment.likes}
+                      </button>
+                      <button
+                        type="button"
+                        className="comment-action-button"
+                        onClick={() => handleReplyClick(comment.id)}
+                      >
+                        💬 답글 달기
+                      </button>
+                      {(comment.isMine || canModerate) && (
+                        <button
+                          type="button"
+                          className="comment-action-button delete"
+                          onClick={() => handleCommentDelete(comment)}
+                        >
+                          🗑 삭제
+                        </button>
+                      )}
+                      {!comment.isMine && (
+                        <button
+                          type="button"
+                          className="comment-action-button"
+                          onClick={() => openReport('comment', comment.id)}
+                        >
+                          🚩 신고
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {repliesByParent.get(comment.id)?.map((reply) => (
                     <div key={reply.id} style={{ marginTop: 12, paddingLeft: 16, borderLeft: '2px solid #e5e7eb' }}>
                       <div className="comment-item-header">
-                        <span className="comment-author">{reply.author}</span>
+                        <span className="comment-author">
+                          {reply.isDeleted ? '' : reply.author}
+                        </span>
                         <span className="comment-date">{reply.createdAt}</span>
                       </div>
-                      <p className="comment-content">{reply.content}</p>
-                      <div className="comment-actions">
-                        <button
-                          type="button"
-                          className={
-                            reply.likedByMe ? 'comment-action-button liked' : 'comment-action-button'
-                          }
-                          onClick={() => handleCommentLike(reply.id)}
-                        >
-                          👍 좋아요 {reply.likes}
-                        </button>
-                      </div>
+                      <p
+                        className={
+                          reply.isDeleted ? 'comment-content deleted' : 'comment-content'
+                        }
+                      >
+                        {reply.content}
+                      </p>
+                      {!reply.isDeleted && (
+                        <div className="comment-actions">
+                          <button
+                            type="button"
+                            className={
+                              reply.likedByMe
+                                ? 'comment-action-button liked'
+                                : 'comment-action-button'
+                            }
+                            onClick={() => handleCommentLike(reply.id)}
+                          >
+                            👍 좋아요 {reply.likes}
+                          </button>
+                          {(reply.isMine || canModerate) && (
+                            <button
+                              type="button"
+                              className="comment-action-button delete"
+                              onClick={() => handleCommentDelete(reply)}
+                            >
+                              🗑 삭제
+                            </button>
+                          )}
+                          {!reply.isMine && (
+                            <button
+                              type="button"
+                              className="comment-action-button"
+                              onClick={() => openReport('comment', reply.id)}
+                            >
+                              🚩 신고
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
 
@@ -379,6 +494,14 @@ function PostDetailPage() {
 
         </section>
       </main>
+
+      {reportTarget && (
+        <ReportModal
+          targetType={reportTarget.type}
+          targetId={reportTarget.id}
+          onClose={() => setReportTarget(null)}
+        />
+      )}
     </div>
   )
 }

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
+import ImageAttacher from '../../components/community/ImageAttacher'
 import { getPost, updatePost } from '../../api/communityApi'
 import { useAuth } from '../../lib/auth'
-import type { PostCategory, PostDetail } from '../../types/community'
+import type { PostCategory, PostDetail, PostImage } from '../../types/community'
 import '../../styles/community-write.css'
 
 function PostEditPage() {
@@ -17,6 +18,7 @@ function PostEditPage() {
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<PostCategory>('질문')
   const [content, setContent] = useState('')
+  const [images, setImages] = useState<PostImage[]>([])
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -30,6 +32,7 @@ function PostEditPage() {
         setTitle(detail.title)
         setCategory(detail.category)
         setContent(detail.content)
+        setImages(detail.images)
       })
       .catch(() => {
         if (!cancelled) setPost(null)
@@ -59,6 +62,7 @@ function PostEditPage() {
         title: title.trim(),
         category,
         content: content.trim(),
+        imageIds: images.map((image) => image.id),
       })
       navigate(`/community/${postId}`)
     } catch (error) {
@@ -154,6 +158,8 @@ function PostEditPage() {
                 onChange={(e) => setContent(e.target.value)}
               />
             </div>
+
+            <ImageAttacher images={images} onChange={setImages} />
 
             <div className="write-actions">
               <button type="button" className="write-cancel-button" onClick={handleCancel}>

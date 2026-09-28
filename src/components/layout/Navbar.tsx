@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import BridgeOnLogo from '../../assets/BridgeOnLogo.png'
+import NotificationBell from './NotificationBell'
 import { useAuth } from '../../lib/auth'
 
 type NavbarProps = {
@@ -11,11 +12,18 @@ const MENU_PATHS: Record<string, string> = {
   '파일 변환': '/',
   '커뮤니티': '/community',
   '마이페이지': '/mypage',
+  '관리자': '/admin',
 }
 
 function Navbar({ menuItems }: NavbarProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+
+  // 관리자에게는 어느 화면에서든 관리자 메뉴를 붙여준다.
+  const visibleMenuItems =
+    user?.role === 'admin' && !menuItems.includes('관리자')
+      ? [...menuItems, '관리자']
+      : menuItems
 
   const handleLogout = () => {
     logout()
@@ -33,7 +41,7 @@ function Navbar({ menuItems }: NavbarProps) {
         </div>
 
         <ul className="navbar-menu-list">
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const path = MENU_PATHS[item]
 
             return (
@@ -55,6 +63,7 @@ function Navbar({ menuItems }: NavbarProps) {
         <div className="navbar-action-area">
           {user ? (
             <>
+              <NotificationBell />
               <Link to="/mypage" className="navbar-user-name" aria-label="마이페이지로 이동">
                 {user.nickname}
               </Link>
