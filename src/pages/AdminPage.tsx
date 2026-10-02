@@ -5,15 +5,30 @@ import AdminUsersTab from '../components/admin/AdminUsersTab'
 import AdminPostsTab from '../components/admin/AdminPostsTab'
 import AdminReportsTab from '../components/admin/AdminReportsTab'
 import { useAuth } from '../lib/auth'
+import { useTabs } from '../lib/useTabs'
 import '../styles/navbar.css'
 import '../styles/mypage.css'
 import '../styles/admin.css'
 
 type TabKey = 'users' | 'posts' | 'reports'
 
+const TABS: TabKey[] = ['users', 'posts', 'reports']
+const TAB_LABELS: Record<TabKey, string> = {
+  users: '사용자',
+  posts: '게시글',
+  reports: '신고',
+}
+
 function AdminPage() {
   const { user, loading } = useAuth()
   const [tab, setTab] = useState<TabKey>('users')
+  // 훅이라서 아래의 이른 return보다 먼저 불러야 한다.
+  const { getTabProps, panelProps } = useTabs({
+    idPrefix: 'admin',
+    tabs: TABS,
+    selected: tab,
+    onSelect: setTab,
+  })
 
   // 세션 복원 중에는 판단을 미룬다.
   if (loading) {
@@ -50,36 +65,19 @@ function AdminPage() {
         <h1 className="admin-title">관리자</h1>
 
         <div className="admin-tabs" role="tablist" aria-label="관리 대상 선택">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'users'}
-            className={tab === 'users' ? 'admin-tab active' : 'admin-tab'}
-            onClick={() => setTab('users')}
-          >
-            사용자
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'posts'}
-            className={tab === 'posts' ? 'admin-tab active' : 'admin-tab'}
-            onClick={() => setTab('posts')}
-          >
-            게시글
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'reports'}
-            className={tab === 'reports' ? 'admin-tab active' : 'admin-tab'}
-            onClick={() => setTab('reports')}
-          >
-            신고
-          </button>
+          {TABS.map((key, index) => (
+            <button
+              key={key}
+              type="button"
+              className={tab === key ? 'admin-tab active' : 'admin-tab'}
+              {...getTabProps(key, index)}
+            >
+              {TAB_LABELS[key]}
+            </button>
+          ))}
         </div>
 
-        <section className="admin-card">
+        <section className="admin-card" {...panelProps}>
           {tab === 'users' && <AdminUsersTab myId={user.id} />}
           {tab === 'posts' && <AdminPostsTab />}
           {tab === 'reports' && <AdminReportsTab />}

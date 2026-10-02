@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Pagination from '../community/Pagination'
 import { getReports, setReportStatus } from '../../api/adminApi'
 import { deletePost, deleteComment } from '../../api/communityApi'
+import { useTabs } from '../../lib/useTabs'
 import {
   REPORT_STATUS_LABEL,
   type AdminReport,
@@ -15,6 +16,7 @@ const FILTERS: Array<{ key: ReportStatus | ''; label: string }> = [
   { key: 'rejected', label: '기각' },
   { key: '', label: '전체' },
 ]
+const FILTER_KEYS = FILTERS.map((item) => item.key)
 
 function AdminReportsTab() {
   const [filter, setFilter] = useState<ReportStatus | ''>('pending')
@@ -27,6 +29,19 @@ function AdminReportsTab() {
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+
+  const handleFilterChange = (key: ReportStatus | '') => {
+    setFilter(key)
+    setPage(1)
+  }
+
+  // 상태 필터도 탭이라서 ←/→·Home/End로 옮기고, Tab 키는 한 번만 멈춘다.
+  const { getTabProps, panelProps } = useTabs({
+    idPrefix: 'report-filter',
+    tabs: FILTER_KEYS,
+    selected: filter,
+    onSelect: handleFilterChange,
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -99,15 +114,12 @@ function AdminReportsTab() {
     <>
       <div className="admin-toolbar">
         <div className="admin-filter-group" role="tablist" aria-label="신고 상태 필터">
-          {FILTERS.map((item) => (
+          {FILTERS.map((item, index) => (
             <button
               key={item.label}
               type="button"
               className={filter === item.key ? 'admin-filter active' : 'admin-filter'}
-              onClick={() => {
-                setFilter(item.key)
-                setPage(1)
-              }}
+              {...getTabProps(item.key, index)}
             >
               {item.label}
             </button>
@@ -118,79 +130,82 @@ function AdminReportsTab() {
         </span>
       </div>
 
-      {loading ? (
-        <p className="admin-empty">불러오는 중...</p>
-      ) : error ? (
-        <p className="admin-empty">{error}</p>
-      ) : reports.length === 0 ? (
-        <p className="admin-empty">해당하는 신고가 없습니다.</p>
-      ) : (
-        <>
-          <ul className="admin-list">
-            {reports.map((report) => (
-              <li key={report.id} className="admin-row">
-                <div className="admin-row-main">
-                  <span className="admin-row-title">
-                    <span className="admin-badge category">
-                      {report.targetType === 'post' ? '게시글' : '댓글'}
+      {/* 선택된 상태 필터의 목록. 스크린리더가 어느 필터의 결과인지 알 수 있게 탭과 이어 둔다. */}
+      <div {...panelProps}>
+        {loading ? (
+          <p className="admin-empty">불러오는 중...</p>
+        ) : error ? (
+          <p className="admin-empty">{error}</p>
+        ) : reports.length === 0 ? (
+          <p className="admin-empty">해당하는 신고가 없습니다.</p>
+        ) : (
+          <>
+            <ul className="admin-list">
+              {reports.map((report) => (
+                <li key={report.id} className="admin-row">
+                  <div className="admin-row-main">
+                    <span className="admin-row-title">
+                      <span className="admin-badge category">
+                        {report.targetType === 'post' ? '게시글' : '댓글'}
+                      </span>
+                      {report.targetExists && report.postId ? (
+                        <Link to={`/community/${report.postId}`} className="admin-row-link">
+                          {report.targetPreview}
+                        </Link>
+                      ) : (
+                        <span className="admin-row-deleted">{report.targetPreview}</span>
+                      )}
+                      <span className={`admin-badge status ${report.status}`}>
+                        {REPORT_STATUS_LABEL[report.status]}
+                      </span>
                     </span>
-                    {report.targetExists && report.postId ? (
-                      <Link to={`/community/${report.postId}`} className="admin-row-link">
-                        {report.targetPreview}
-                      </Link>
-                    ) : (
-                      <span className="admin-row-deleted">{report.targetPreview}</span>
+                    <span className="admin-row-sub">
+                      {report.reason}
+                      {report.detail ? ` · "${report.detail}"` : ''} · 신고자 {report.reporter} ·{' '}
+                      {report.createdAt}
+                    </span>
+                  </div>
+
+                  <div className="admin-row-actions">
+                    {report.status !== 'resolved' && (
+                      <button
+                        type="button"
+                        className="admin-action-button"
+                        onClick={() => handleStatus(report, 'resolved')}
+                        disabled={busyId === report.id}
+                      >
+                        처리완료
+                      </button>
                     )}
-                    <span className={`admin-badge status ${report.status}`}>
-                      {REPORT_STATUS_LABEL[report.status]}
-                    </span>
-                  </span>
-                  <span className="admin-row-sub">
-                    {report.reason}
-                    {report.detail ? ` · "${report.detail}"` : ''} · 신고자 {report.reporter} ·{' '}
-                    {report.createdAt}
-                  </span>
-                </div>
+                    {report.status !== 'rejected' && (
+                      <button
+                        type="button"
+                        className="admin-action-button"
+                        onClick={() => handleStatus(report, 'rejected')}
+                        disabled={busyId === report.id}
+                      >
+                        기각
+                      </button>
+                    )}
+                    {report.targetExists && (
+                      <button
+                        type="button"
+                        className="admin-action-button danger"
+                        onClick={() => handleDeleteTarget(report)}
+                        disabled={busyId === report.id}
+                      >
+                        대상 삭제
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
 
-                <div className="admin-row-actions">
-                  {report.status !== 'resolved' && (
-                    <button
-                      type="button"
-                      className="admin-action-button"
-                      onClick={() => handleStatus(report, 'resolved')}
-                      disabled={busyId === report.id}
-                    >
-                      처리완료
-                    </button>
-                  )}
-                  {report.status !== 'rejected' && (
-                    <button
-                      type="button"
-                      className="admin-action-button"
-                      onClick={() => handleStatus(report, 'rejected')}
-                      disabled={busyId === report.id}
-                    >
-                      기각
-                    </button>
-                  )}
-                  {report.targetExists && (
-                    <button
-                      type="button"
-                      className="admin-action-button danger"
-                      onClick={() => handleDeleteTarget(report)}
-                      disabled={busyId === report.id}
-                    >
-                      대상 삭제
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-        </>
-      )}
+            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </>
+        )}
+      </div>
     </>
   )
 }

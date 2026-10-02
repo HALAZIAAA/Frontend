@@ -117,7 +117,7 @@
   gap: 8px;
   align-items: center;
   font-size: 1.05rem;
-  color: #9ca3af;
+  color: #6b7280;
   margin-bottom: 20px;
 }
 
@@ -237,7 +237,7 @@
 
 .comment-date {
   font-size: 1.05rem;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .comment-content {
@@ -329,7 +329,8 @@
 .post-detail-not-found {
   padding: 60px 0;
   text-align: center;
-  color: #9ca3af;
+  /* 바탕이 흰색이 아니라서 한 단계 더 진하게 (대비 4.5:1 이상) */
+  color: #4b5563;
   font-size: 1.15rem;
 }
 
@@ -367,7 +368,7 @@
 
 /* 답글이 달린 채로 지워진 댓글 자리 */
 .comment-content.deleted {
-  color: #9ca3af;
+  color: #6b7280;
   font-style: italic;
 }
 
@@ -445,7 +446,6 @@
 }
 
 .report-detail:focus {
-  outline: none;
   border-color: #6366f1;
 }
 

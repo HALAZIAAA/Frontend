@@ -319,6 +319,7 @@ function PostDetailPage() {
               <textarea
                 className="comment-new-textarea"
                 placeholder="댓글을 입력하세요"
+                aria-label="댓글 입력"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 autoFocus
@@ -348,7 +349,7 @@ function PostDetailPage() {
           </h3>
 
           {topLevelComments.length === 0 ? (
-            <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>아직 댓글이 없습니다.</p>
+            <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>아직 댓글이 없습니다.</p>
           ) : (
             <ul className="comment-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               {topLevelComments.map((comment) => (
@@ -460,11 +461,14 @@ function PostDetailPage() {
 
                   {replyTargetId === comment.id && (
                     <div className="comment-reply-box">
+                      {/* '답글 달기'를 누르면 바로 입력할 수 있게 입력칸으로 포커스를 옮긴다. */}
                       <textarea
                         className="comment-reply-textarea"
                         placeholder="답글을 입력하세요"
+                        aria-label="답글 입력"
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
+                        autoFocus
                       />
                       <div className="comment-reply-actions">
                         <button
