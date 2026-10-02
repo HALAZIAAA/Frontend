@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BridgeOnLogo from '../../assets/BridgeOnLogo.png'
 import NotificationBell from './NotificationBell'
@@ -30,8 +31,20 @@ function Navbar({ menuItems }: NavbarProps) {
     navigate('/')
   }
 
+  // 본문 바로가기: 화면마다 하나씩 있는 <main>으로 포커스를 옮겨서 다음 Tab이 메뉴를 건너뛰고 본문부터 시작하게 한다.
+  const handleSkipToMain = (event: MouseEvent<HTMLAnchorElement>) => {
+    const main = document.querySelector('main')
+    if (!main) return
+    event.preventDefault()
+    main.setAttribute('tabindex', '-1')
+    main.focus()
+  }
+
   return (
     <header className="navbar-wrapper">
+      <a href="#main" className="skip-link" onClick={handleSkipToMain}>
+        본문 바로가기
+      </a>
       <nav className="navbar-container" aria-label="주요 메뉴">
         <div className="navbar-logo-area">
           <Link className="navbar-logo-link" to="/" aria-label="BridgeOn 홈으로 이동">

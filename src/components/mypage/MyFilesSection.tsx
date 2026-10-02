@@ -78,12 +78,13 @@ function MyFilesSection() {
                 {STATUS_LABEL[file.status] ?? file.status} · {formatDate(file.created_at)}
               </span>
               <div className="mypage-file-actions">
+                {/* 서버가 첨부파일로 내려주므로 같은 창에서 눌러도 화면 이동 없이 다운로드만 된다.
+                    파일마다 링크 이름이 같지 않도록 파일명을 붙인다. (보이는 '다운로드'도 이름에 포함) */}
                 {file.result_ready && file.download_url && (
                   <a
                     className="mypage-file-link"
                     href={toAbsolute(file.download_url)}
-                    target="_blank"
-                    rel="noreferrer"
+                    aria-label={`${file.original_name} 결과 파일 다운로드`}
                   >
                     다운로드
                   </a>
@@ -92,6 +93,7 @@ function MyFilesSection() {
                   type="button"
                   className="mypage-file-delete"
                   onClick={() => handleDelete(file.file_id, file.original_name)}
+                  aria-label={`${file.original_name} 삭제`}
                 >
                   삭제
                 </button>

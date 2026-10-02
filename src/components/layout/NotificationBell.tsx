@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getNotifications,
@@ -9,6 +9,7 @@ import {
 import type { AppNotification } from '../../types/notification'
 
 const POLL_INTERVAL = 30_000 // 30초마다 안 읽은 개수만 확인
+const DROPDOWN_ID = 'notification-dropdown'
 
 function NotificationBell() {
   const navigate = useNavigate()
@@ -17,6 +18,8 @@ function NotificationBell() {
   const [items, setItems] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const bellRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // 개수 폴링
   useEffect(() => {
@@ -53,6 +56,13 @@ function NotificationBell() {
     document.addEventListener('mousedown', handleOutside)
     return () => document.removeEventListener('mousedown', handleOutside)
   }, [open])
+
+  // 목록을 다 불러오면 첫 알림(없으면 알림 창 자체)으로 포커스를 옮긴다. 바로 ↑/↓로 훑을 수 있게.
+  useEffect(() => {
+    if (!open || loading) return
+    const first = dropdownRef.current?.querySelector<HTMLButtonElement>('.notification-item')
+    ;(first ?? dropdownRef.current)?.focus()
+  }, [open, loading])
 
   const handleToggle = async () => {
     if (open) {
@@ -100,13 +110,67 @@ function NotificationBell() {
     }
   }
 
+  // Esc로 닫고 종 버튼으로 돌아간다. ↑/↓·Home/End로 알림 사이를 옮긴다.
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!open) return
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      setOpen(false)
+      bellRef.current?.focus()
+      return
+    }
+
+    const buttons = Array.from(
+      dropdownRef.current?.querySelectorAll<HTMLButtonElement>('.notification-item') ?? [],
+    )
+    if (buttons.length === 0) return
+    const current = buttons.indexOf(document.activeElement as HTMLButtonElement)
+
+    let next: number
+    switch (event.key) {
+      case 'ArrowDown':
+        next = current < 0 ? 0 : (current + 1) % buttons.length
+        break
+      case 'ArrowUp':
+        next = current < 0 ? buttons.length - 1 : (current - 1 + buttons.length) % buttons.length
+        break
+      case 'Home':
+        next = 0
+        break
+      case 'End':
+        next = buttons.length - 1
+        break
+      default:
+        return
+    }
+    event.preventDefault()
+    buttons[next].focus()
+  }
+
+  // Tab으로 알림 창 밖으로 나가면 닫는다. (마우스로 바깥을 누르는 건 위의 mousedown이 처리한다)
+  const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
+    const next = event.relatedTarget
+    if (open && next instanceof Node && !wrapperRef.current?.contains(next)) {
+      setOpen(false)
+    }
+  }
+
   return (
-    <div className="notification-area" ref={wrapperRef}>
+    <div
+      className="notification-area"
+      ref={wrapperRef}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+    >
       <button
+        ref={bellRef}
         type="button"
         className="notification-bell"
         onClick={handleToggle}
         aria-label={unread > 0 ? `읽지 않은 알림 ${unread}개` : '알림'}
+        aria-expanded={open}
+        aria-controls={open ? DROPDOWN_ID : undefined}
       >
         🔔
         {unread > 0 && (
@@ -115,7 +179,14 @@ function NotificationBell() {
       </button>
 
       {open && (
-        <div className="notification-dropdown" role="dialog" aria-label="알림 목록">
+        <div
+          id={DROPDOWN_ID}
+          ref={dropdownRef}
+          tabIndex={-1}
+          className="notification-dropdown"
+          role="dialog"
+          aria-label="알림 목록"
+        >
           <div className="notification-dropdown-header">
             <span>알림</span>
             {unread > 0 && (

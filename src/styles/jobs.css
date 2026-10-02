@@ -1,0 +1,137 @@
+/* 커뮤니티 '채용공고' 탭.
+   회색 글씨도 바탕과의 대비가 4.5:1 이상(WCAG AA)이 되도록 색을 골랐다. */
+
+.job-board {
+  margin-top: 16px;
+  margin-bottom: 20px;
+}
+
+.job-board-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.job-board-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.job-board-checked {
+  font-size: 0.98rem;
+  color: #4b5563;
+}
+
+.job-board-guide {
+  margin-top: 6px;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.job-board-status {
+  margin: 14px 0 10px;
+  font-size: 1.02rem;
+  color: #374151;
+}
+
+.job-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.job-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03);
+}
+
+.job-card + .job-card {
+  margin-top: 12px;
+}
+
+.job-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.job-card-board,
+.job-card-status,
+.job-card-days-left {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.job-card-board {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+.job-card-status.open {
+  background-color: #f0fdf4;
+  color: #15803d;
+}
+
+.job-card-days-left {
+  border: 1px solid #15803d;
+  background-color: #ffffff;
+  color: #15803d;
+}
+
+.job-card-status.unknown {
+  background-color: #fffbeb;
+  color: #b45309;
+}
+
+.job-card-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* 링크라는 게 색이 아니어도 보이도록 밑줄을 늘 긋는다. */
+.job-card-title a {
+  color: #111827;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.job-card-title a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.job-card-title a:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.job-card-new-window {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.job-card-meta {
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+.job-card-meta-item {
+  display: inline-block;
+  margin-right: 12px;
+}

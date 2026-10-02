@@ -92,7 +92,6 @@
 }
 
 .mypage-input:focus {
-  outline: none;
   border-color: #6366f1;
 }
 
@@ -243,13 +242,13 @@ a.mypage-list-main:hover .mypage-list-title {
 
 .mypage-list-empty {
   margin: 0;
-  color: #9ca3af;
+  color: #6b7280;
   font-size: 0.9rem;
 }
 
 .mypage-list-more {
   margin: 0.8rem 0 0;
-  color: #9ca3af;
+  color: #6b7280;
   font-size: 0.85rem;
   text-align: center;
 }

@@ -60,7 +60,6 @@
   font-size: 1.15rem;
   color: #111827;
   background-color: #ffffff;
-  outline: none;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
