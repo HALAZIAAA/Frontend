@@ -6,8 +6,10 @@ import { getPost, updatePost } from '../../api/communityApi'
 import { useAuth } from '../../lib/auth'
 import type { PostCategory, PostDetail, PostImage } from '../../types/community'
 import '../../styles/community-write.css'
+import { useDocumentTitle } from '../../lib/useDocumentTitle'
 
 function PostEditPage() {
+  useDocumentTitle('글 수정')
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
@@ -76,7 +78,7 @@ function PostEditPage() {
     return (
       <div className="write-page">
         <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
-        <main className="write-main">
+        <main className="page-container write-main">
           <div className="post-detail-not-found">
             <p>불러오는 중...</p>
           </div>
@@ -90,7 +92,7 @@ function PostEditPage() {
     return (
       <div className="write-page">
         <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
-        <main className="write-main">
+        <main className="page-container write-main">
           <div className="post-detail-not-found">
             <p>{post ? '본인이 작성한 글만 수정할 수 있습니다.' : '존재하지 않는 게시글입니다'}</p>
             <Link to="/community">목록으로</Link>
@@ -104,7 +106,7 @@ function PostEditPage() {
     <div className="write-page">
       <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-      <main className="write-main">
+      <main className="page-container write-main">
         <Link to={`/community/${postId}`} className="write-back-link">
           ← 게시글로
         </Link>

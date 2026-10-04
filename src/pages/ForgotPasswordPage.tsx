@@ -2,8 +2,10 @@ import { Link } from 'react-router-dom'
 import AuthLayout from '../components/auth/AuthLayout'
 import '../styles/navbar.css'
 import '../styles/auth.css'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 function ForgotPasswordPage() {
+  useDocumentTitle('비밀번호 찾기')
   return (
     <AuthLayout title="비밀번호 찾기">
       <p className="auth-feedback-message">

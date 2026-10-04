@@ -209,6 +209,8 @@ function NotificationBell() {
                     className={item.isRead ? 'notification-item' : 'notification-item unread'}
                     onClick={() => handleItemClick(item)}
                   >
+                    {/* 안 읽음은 화면에선 색 띠로만 보여서 스크린리더용 글자를 따로 둔다 */}
+                    {!item.isRead && <span className="sr-only">읽지 않음, </span>}
                     <span className="notification-message">{item.message}</span>
                     <span className="notification-date">{item.createdAt}</span>
                   </button>

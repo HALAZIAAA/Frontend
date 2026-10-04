@@ -40,7 +40,8 @@ function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps) {
       window.google.accounts.id.renderButton(divRef.current, {
         theme: 'outline',
         size: 'large',
-        width: 400, // GIS가 허용하는 최대 폭. 나머지는 CSS scale로 카드 폭에 맞춘다.
+        // GIS가 허용하는 최대 폭은 400. 좁은 화면에서는 카드 안쪽 폭에 맞춰 그려야 가로로 넘치지 않는다.
+        width: Math.min(400, divRef.current.offsetWidth),
         text: 'continue_with',
       })
     }

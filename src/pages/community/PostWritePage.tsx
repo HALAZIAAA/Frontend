@@ -6,8 +6,10 @@ import { createPost } from '../../api/communityApi'
 import { useAuth } from '../../lib/auth'
 import type { PostCategory, PostImage } from '../../types/community'
 import '../../styles/community-write.css'
+import { useDocumentTitle } from '../../lib/useDocumentTitle'
 
 function PostWritePage() {
+  useDocumentTitle('글쓰기')
   const navigate = useNavigate()
   const { user, loading } = useAuth()
 
@@ -56,7 +58,7 @@ function PostWritePage() {
     <div className="write-page">
       <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-      <main className="write-main">
+      <main className="page-container write-main">
         <Link to="/community" className="write-back-link">
           ← 목록으로
         </Link>

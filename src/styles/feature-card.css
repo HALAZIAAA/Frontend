@@ -1,7 +1,7 @@
 .feature-card-item {
   background-color: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 0.9rem;  
+  border-radius: 0.9rem;
   min-height: 220px;
   padding: 1rem;
   display: flex;
@@ -20,9 +20,18 @@
   text-align: left;
 }
 
-.feature-card-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .feature-card-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(17, 24, 39, 0.1);
+  }
+}
+
+/* 한 줄에 하나씩 쌓이는 좁은 화면에서는 빈 높이를 두지 않는다 */
+@media (max-width: 640px) {
+  .feature-card-item {
+    min-height: 0;
+  }
 }
 
 .feature-card-icon-box {

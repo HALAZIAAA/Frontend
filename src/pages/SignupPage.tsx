@@ -6,6 +6,7 @@ import GoogleLoginButton from '../components/auth/GoogleLoginButton'
 import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
 import '../styles/auth.css'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 type SignupFormState = {
   email: string
@@ -20,6 +21,7 @@ type SignupFormErrors = {
 }
 
 function SignupPage() {
+  useDocumentTitle('회원가입')
   const { signup } = useAuth()
   const navigate = useNavigate()
   const [formState, setFormState] = useState<SignupFormState>({
@@ -63,8 +65,17 @@ function SignupPage() {
     setErrors(validationErrors)
     if (Object.keys(validationErrors).length > 0) {
       setSubmitMessage('')
+      // 틀린 첫 칸으로 옮겨서 무엇을 고쳐야 하는지 바로 듣게 한다.
+      const firstField = validationErrors.email
+        ? 'email'
+        : validationErrors.password
+          ? 'password'
+          : 'confirm-password'
+      document.getElementById(`signup-${firstField}`)?.focus()
       return
     }
+
+    setSubmitMessage('')
 
     const result = await signup(formState.email, formState.password)
     if (result.ok) {
@@ -96,8 +107,13 @@ function SignupPage() {
           onChange={handleChange('email')}
           placeholder="email@example.com"
           aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? 'signup-email-error' : undefined}
         />
-        {errors.email && <p className="auth-error-message">{errors.email}</p>}
+        {errors.email && (
+          <p id="signup-email-error" className="auth-error-message">
+            {errors.email}
+          </p>
+        )}
 
         <label className="auth-field-label" htmlFor="signup-password">
           비밀번호
@@ -111,8 +127,13 @@ function SignupPage() {
           onChange={handleChange('password')}
           placeholder="********"
           aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? 'signup-password-error' : undefined}
         />
-        {errors.password && <p className="auth-error-message">{errors.password}</p>}
+        {errors.password && (
+          <p id="signup-password-error" className="auth-error-message">
+            {errors.password}
+          </p>
+        )}
 
         <label className="auth-field-label" htmlFor="signup-confirm-password">
           비밀번호 확인
@@ -126,17 +147,25 @@ function SignupPage() {
           onChange={handleChange('confirmPassword')}
           placeholder="********"
           aria-invalid={Boolean(errors.confirmPassword)}
+          aria-describedby={errors.confirmPassword ? 'signup-confirm-password-error' : undefined}
         />
-        {errors.confirmPassword && <p className="auth-error-message">{errors.confirmPassword}</p>}
+        {errors.confirmPassword && (
+          <p id="signup-confirm-password-error" className="auth-error-message">
+            {errors.confirmPassword}
+          </p>
+        )}
 
         <button type="submit" className="auth-primary-button">
           회원가입
         </button>
       </form>
 
-      {(submitMessage || socialMessage) && (
-        <p className="auth-feedback-message">{submitMessage || socialMessage}</p>
-      )}
+      {/* 빈 상태로도 늘 자리를 둬야 스크린리더가 나중에 들어온 실패 안내를 읽는다 */}
+      <div role="alert">
+        {(submitMessage || socialMessage) && (
+          <p className="auth-feedback-message">{submitMessage || socialMessage}</p>
+        )}
+      </div>
 
       <p className="auth-switch-text">
         이미 계정이 있으신가요?{' '}

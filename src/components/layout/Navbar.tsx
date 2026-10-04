@@ -45,7 +45,7 @@ function Navbar({ menuItems }: NavbarProps) {
       <a href="#main" className="skip-link" onClick={handleSkipToMain}>
         본문 바로가기
       </a>
-      <nav className="navbar-container" aria-label="주요 메뉴">
+      <nav className="page-container navbar-container" aria-label="주요 메뉴">
         <div className="navbar-logo-area">
           <Link className="navbar-logo-link" to="/" aria-label="BridgeOn 홈으로 이동">
             <img src={BridgeOnLogo} alt="BridgeOn 로고" className="navbar-logo-image" />

@@ -4,8 +4,10 @@ import Navbar from '../components/layout/Navbar'
 import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
 import '../styles/mypage.css'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 function ChangeNicknamePage() {
+  useDocumentTitle('닉네임 변경')
   const { user, loading, updateNickname } = useAuth()
   const navigate = useNavigate()
   const [nickname, setNickname] = useState('')
@@ -23,7 +25,7 @@ function ChangeNicknamePage() {
       <div className="mypage-page">
         <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-        <main className="mypage-main">
+        <main className="page-container mypage-main">
           <h1 className="mypage-title">닉네임 변경</h1>
 
           <section className="mypage-card mypage-guard" aria-label="로그인 안내">
@@ -39,6 +41,7 @@ function ChangeNicknamePage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
+    setMessage('')
 
     const nextNickname = nickname.trim()
     if (!nextNickname) {
@@ -69,7 +72,7 @@ function ChangeNicknamePage() {
     <div className="mypage-page">
       <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-      <main className="mypage-main">
+      <main className="page-container mypage-main">
         <Link to="/mypage" className="mypage-back-link">
           ← 마이페이지
         </Link>
@@ -95,6 +98,7 @@ function ChangeNicknamePage() {
               maxLength={12}
               aria-label="새 닉네임"
               aria-invalid={isError}
+              aria-describedby={message ? 'nickname-message' : undefined}
             />
 
             <div className="mypage-danger-actions">
@@ -107,9 +111,13 @@ function ChangeNicknamePage() {
             </div>
           </form>
 
-          {message && (
-            <p className={isError ? 'mypage-message error' : 'mypage-message'}>{message}</p>
-          )}
+          <div role="alert">
+            {message && (
+              <p id="nickname-message" className={isError ? 'mypage-message error' : 'mypage-message'}>
+                {message}
+              </p>
+            )}
+          </div>
         </section>
       </main>
     </div>

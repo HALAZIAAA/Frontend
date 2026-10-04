@@ -5,6 +5,7 @@ import UploadSection from '../components/home/UploadSection'
 import '../styles/navbar.css'
 import '../styles/home.css'
 import '../styles/feature-card.css'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const featureItems = [
   {
@@ -25,11 +26,12 @@ const featureItems = [
 ]
 
 function HomePage() {
+  useDocumentTitle('파일 변환')
   return (
     <div className="homepage-wrapper">
       <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-      <main className="home-main-content">
+      <main className="page-container home-main-content">
         <HeroSection
           title="간편한 파일 변환 서비스"
           description="다양한 형식의 파일을 빠르고 안전하게 변환하세요"
@@ -37,7 +39,10 @@ function HomePage() {
 
         <UploadSection />
 
-        <section className="feature-section" aria-label="서비스 주요 기능">
+        <section className="feature-section" aria-labelledby="feature-section-title">
+          <h2 id="feature-section-title" className="sr-only">
+            주요 기능
+          </h2>
           <div className="feature-grid-container">
             {featureItems.map((featureItem) => (
               <FeatureCard

@@ -9,6 +9,7 @@ import { useTabs } from '../lib/useTabs'
 import '../styles/navbar.css'
 import '../styles/mypage.css'
 import '../styles/admin.css'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 type TabKey = 'users' | 'posts' | 'reports'
 
@@ -20,6 +21,7 @@ const TAB_LABELS: Record<TabKey, string> = {
 }
 
 function AdminPage() {
+  useDocumentTitle('관리자')
   const { user, loading } = useAuth()
   const [tab, setTab] = useState<TabKey>('users')
   // 훅이라서 아래의 이른 return보다 먼저 불러야 한다.
@@ -41,7 +43,7 @@ function AdminPage() {
       <div className="admin-page">
         <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-        <main className="admin-main">
+        <main className="page-container admin-main">
           <h1 className="admin-title">관리자</h1>
 
           <section className="mypage-card mypage-guard" aria-label="접근 안내">
@@ -61,7 +63,7 @@ function AdminPage() {
     <div className="admin-page">
       <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지', '관리자']} />
 
-      <main className="admin-main">
+      <main className="page-container admin-main">
         <h1 className="admin-title">관리자</h1>
 
         <div className="admin-tabs" role="tablist" aria-label="관리 대상 선택">

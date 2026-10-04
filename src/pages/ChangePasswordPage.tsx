@@ -4,8 +4,10 @@ import Navbar from '../components/layout/Navbar'
 import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
 import '../styles/mypage.css'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 function ChangePasswordPage() {
+  useDocumentTitle('비밀번호 변경')
   const { user, loading, changePassword } = useAuth()
   const navigate = useNavigate()
   const [current, setCurrent] = useState('')
@@ -26,7 +28,7 @@ function ChangePasswordPage() {
       <div className="mypage-page">
         <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-        <main className="mypage-main">
+        <main className="page-container mypage-main">
           <h1 className="mypage-title">비밀번호 변경</h1>
 
           <section className="mypage-card mypage-guard" aria-label="안내">
@@ -46,6 +48,7 @@ function ChangePasswordPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
+    setMessage('')
 
     if (next !== confirm) {
       setIsError(true)
@@ -70,7 +73,7 @@ function ChangePasswordPage() {
     <div className="mypage-page">
       <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-      <main className="mypage-main">
+      <main className="page-container mypage-main">
         <Link to="/mypage" className="mypage-back-link">
           ← 마이페이지
         </Link>
@@ -121,9 +124,13 @@ function ChangePasswordPage() {
             </div>
           </form>
 
-          {message && (
-            <p className={isError ? 'mypage-message error' : 'mypage-message'}>{message}</p>
-          )}
+          <div role="alert">
+            {message && (
+              <p id="password-message" className={isError ? 'mypage-message error' : 'mypage-message'}>
+                {message}
+              </p>
+            )}
+          </div>
         </section>
       </main>
     </div>
