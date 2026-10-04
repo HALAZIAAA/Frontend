@@ -8,7 +8,7 @@ type NavbarProps = {
   menuItems: string[]
 }
 
-// 메뉴 이름과 이동할 경로. 여기에 없는 이름은 링크 없는 버튼으로 남는다.
+// 메뉴 이름과 이동할 경로
 const MENU_PATHS: Record<string, string> = {
   '파일 변환': '/',
   '커뮤니티': '/community',
@@ -54,23 +54,13 @@ function Navbar({ menuItems }: NavbarProps) {
         </div>
 
         <ul className="navbar-menu-list">
-          {visibleMenuItems.map((item) => {
-            const path = MENU_PATHS[item]
-
-            return (
-              <li key={item} className="navbar-menu-item">
-                {path ? (
-                  <Link to={path} className="navbar-menu-button" aria-label={`${item} 페이지로 이동`}>
-                    {item}
-                  </Link>
-                ) : (
-                  <button type="button" className="navbar-menu-button">
-                    {item}
-                  </button>
-                )}
-              </li>
-            )
-          })}
+          {visibleMenuItems.map((item) => (
+            <li key={item} className="navbar-menu-item">
+              <Link to={MENU_PATHS[item]} className="navbar-menu-button" aria-label={`${item} 페이지로 이동`}>
+                {item}
+              </Link>
+            </li>
+          ))}
         </ul>
 
         <div className="navbar-action-area">
