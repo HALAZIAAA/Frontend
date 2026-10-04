@@ -7,6 +7,7 @@ import DeleteAccountSection from '../components/mypage/DeleteAccountSection'
 import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
 import '../styles/mypage.css'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 // 가입 경로를 화면에 보여줄 말로 바꾼다. ("local,google" 병합 계정도 있음)
 function describeProvider(provider: string): string {
@@ -18,6 +19,7 @@ function describeProvider(provider: string): string {
 }
 
 function MyPage() {
+  useDocumentTitle('마이페이지')
   const { user, loading } = useAuth()
 
   // 세션 복원 중에는 아무것도 그리지 않는다. 여기서 바로 판단하면 새로고침 때 로그인으로 튕긴다.
@@ -31,7 +33,7 @@ function MyPage() {
       <div className="mypage-page">
         <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-        <main className="mypage-main">
+        <main className="page-container mypage-main">
           <h1 className="mypage-title">마이페이지</h1>
 
           <section className="mypage-card mypage-guard" aria-label="로그인 안내">
@@ -49,7 +51,7 @@ function MyPage() {
     <div className="mypage-page">
       <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-      <main className="mypage-main">
+      <main className="page-container mypage-main">
         <h1 className="mypage-title">마이페이지</h1>
 
         <section className="mypage-card" aria-label="내 정보">

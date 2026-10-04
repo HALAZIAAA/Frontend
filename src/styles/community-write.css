@@ -4,19 +4,18 @@
 }
 
 .write-main {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 40px 20px 80px;
+  padding-block: 40px 80px;
 }
 
 .write-back-link {
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
   gap: 4px;
   color: #6b7280;
   font-size: 1.1rem;
   text-decoration: none;
-  margin-bottom: 24px;
+  margin-bottom: 14px;
 }
 
 .write-card {
@@ -33,7 +32,9 @@
   margin-bottom: 28px;
 }
 
+/* 입력 칸이 화면 끝까지 늘어나지 않게 읽기 좋은 폭에서 멈춘다 */
 .write-form {
+  max-width: 70ch;
   display: flex;
   flex-direction: column;
 }
@@ -78,13 +79,15 @@
 
 .write-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 12px;
   margin-top: 28px;
 }
 
 .write-cancel-button {
-  padding: 10px 18px;
+  min-height: 44px;
+  padding: 0 18px;
   border-radius: 8px;
   background-color: #f3f4f6;
   color: #374151;
@@ -95,7 +98,8 @@
 }
 
 .write-submit-button {
-  padding: 10px 18px;
+  min-height: 44px;
+  padding: 0 18px;
   border-radius: 8px;
   background-color: #2563eb;
   color: #ffffff;
@@ -138,7 +142,8 @@
 }
 
 .image-attacher-button {
-  padding: 0.5rem 1rem;
+  min-height: 44px;
+  padding: 0 1rem;
   border: 1px dashed #9ca3af;
   border-radius: 0.6rem;
   background-color: #ffffff;
@@ -189,17 +194,31 @@
   display: block;
 }
 
+/* 보이는 동그라미는 작게 두고, 누르는 영역은 44px로 넓힌다 */
 .image-attacher-remove {
   position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
-  width: 1.4rem;
-  height: 1.4rem;
+  top: 0;
+  right: 0;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   border: none;
-  border-radius: 999px;
-  background-color: rgba(17, 24, 39, 0.65);
+  background: transparent;
   color: #ffffff;
   font-size: 0.75rem;
   line-height: 1;
   cursor: pointer;
+}
+
+.image-attacher-remove::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  background-color: rgba(17, 24, 39, 0.65);
 }

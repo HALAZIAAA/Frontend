@@ -9,6 +9,7 @@ import { useTabs } from '../../lib/useTabs'
 import type { PostCategory, PostSummary, SortType } from '../../types/community'
 import '../../styles/navbar.css'
 import '../../styles/community.css'
+import { useDocumentTitle } from '../../lib/useDocumentTitle'
 
 // 채용공고는 게시글 카테고리가 아니라 외부 게시판에서 모아 온 공고 목록이다. 탭만 같은 줄에 둔다.
 const JOBS_TAB = '채용공고'
@@ -17,6 +18,7 @@ type CommunityTab = '전체' | PostCategory | typeof JOBS_TAB
 const CATEGORY_TABS: CommunityTab[] = ['전체', '공지', '질문', '팁', '후기', JOBS_TAB]
 
 function CommunityPage() {
+  useDocumentTitle('커뮤니티')
   const [selectedCategory, setSelectedCategory] = useState<CommunityTab>('전체')
   const [sort, setSort] = useState<SortType>('latest')
   const [currentPage, setCurrentPage] = useState(1)
@@ -103,7 +105,8 @@ function CommunityPage() {
     <div className="community-page">
       <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-      <main className="community-main">
+      <main className="page-container community-main">
+        <h1 className="community-title">커뮤니티</h1>
 
         <section className="community-filter-card" aria-label="커뮤니티 필터 및 검색">
           <div className="community-category-tabs" role="tablist" aria-label="커뮤니티 카테고리">

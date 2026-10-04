@@ -11,6 +11,7 @@ import {
 } from '../../api/communityApi'
 import ReportModal from '../../components/community/ReportModal'
 import { useAuth } from '../../lib/auth'
+import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import type { Comment, PostDetail } from '../../types/community'
 import type { ReportTargetType } from '../../types/report'
 import '../../styles/navbar.css'
@@ -38,6 +39,8 @@ function PostDetailPage() {
   const [reportTarget, setReportTarget] = useState<
     { type: ReportTargetType; id: number } | null
   >(null)
+
+  useDocumentTitle(loading ? '불러오는 중' : post ? post.title : '존재하지 않는 게시글')
 
   useEffect(() => {
     let cancelled = false
@@ -205,7 +208,7 @@ function PostDetailPage() {
     return (
       <div className="post-detail-page">
         <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
-        <main className="post-detail-main">
+        <main className="page-container post-detail-main">
           <div className="post-detail-not-found">
             <p>불러오는 중...</p>
           </div>
@@ -218,9 +221,9 @@ function PostDetailPage() {
     return (
       <div className="post-detail-page">
         <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
-        <main className="post-detail-main">
+        <main className="page-container post-detail-main">
           <div className="post-detail-not-found">
-            <p>존재하지 않는 게시글입니다.</p>
+            <h1>존재하지 않는 게시글입니다.</h1>
             <Link to="/community">목록으로</Link>
           </div>
         </main>
@@ -232,7 +235,7 @@ function PostDetailPage() {
     <div className="post-detail-page">
       <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
 
-      <main className="post-detail-main">
+      <main className="page-container post-detail-main">
         <Link to="/community" className="post-detail-back-link">
           ← 목록으로
         </Link>
@@ -262,7 +265,7 @@ function PostDetailPage() {
             )}
           </div>
 
-          <h2 className="post-detail-title">{post.title}</h2>
+          <h1 className="post-detail-title">{post.title}</h1>
 
           <div className="post-detail-meta">
             <span>{post.author}</span>
@@ -344,9 +347,9 @@ function PostDetailPage() {
         </article>
 
         <section className="comment-section" aria-label="댓글">
-          <h3 className="comment-section-title">
+          <h2 className="comment-section-title">
             댓글 <span className="comment-count-accent">{post.comments.length}</span>
-          </h3>
+          </h2>
 
           {topLevelComments.length === 0 ? (
             <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>아직 댓글이 없습니다.</p>

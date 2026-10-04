@@ -163,6 +163,20 @@ function formatRemaining(seconds: number): string {
   return `남은 시간 약 ${Math.round(seconds / 60)}분`
 }
 
+// 스크린리더에 알릴 문장. 단계 이름처럼 가끔 바뀌는 것만 담는다.
+function getStatusAnnouncement(state: ConversionState): string {
+  if (state.status === 'converting') return `변환 단계: ${getStageLabel(state.currentStage)}`
+  if (state.status === 'success') {
+    return state.availableFormats.includes('docx')
+      ? '변환 완료. DOCX와 TXT 파일을 받을 수 있습니다.'
+      : '변환 완료. DOCX를 만들지 못해 TXT 파일만 받을 수 있습니다.'
+  }
+  if (state.status === 'error') {
+    return `변환 실패. ${state.errorUserMessage || '다시 시도해 주세요.'}`
+  }
+  return ''
+}
+
 function mapErrorCodeToUserMessage(errorMessage: string): string {
   if (!errorMessage.trim()) {
     return '변환 중 오류가 발생했습니다.'
@@ -748,6 +762,14 @@ function UploadSection() {
 
   return (
     <section className="upload-section" aria-labelledby="upload-section-title">
+      <h2 id="upload-section-title" className="sr-only">
+        파일 변환
+      </h2>
+      {/* 변환 단계가 바뀔 때만 읽어 준다. 진행률 숫자는 1.5초마다 바뀌어서 넣지 않는다. */}
+      <p className="sr-only" role="status">
+        {getStatusAnnouncement(conversionState)}
+      </p>
+
       <div className="upload-box">
         <input
           ref={fileInputRef}
@@ -773,9 +795,7 @@ function UploadSection() {
               </svg>
             </div>
 
-            <h2 id="upload-section-title" className="upload-box-title">
-              파일을 드래그하거나 클릭하여 업로드
-            </h2>
+            <h3 className="upload-box-title">파일을 드래그하거나 클릭하여 업로드</h3>
             <p className="upload-box-support-text">최대 100MB까지 지원</p>
             <button type="button" className="upload-select-button" onClick={handleSelectButtonClick}>
               파일 선택
@@ -849,10 +869,18 @@ function UploadSection() {
             [DEMO] end */}
             <div className="progress-spinner" aria-hidden="true" />
 
-            <h2 className="upload-box-title">변환 중...</h2>
+            <h3 className="upload-box-title">변환 중...</h3>
             <p className="upload-box-support-text">{conversionState.fileName} 파일을 변환하고 있습니다.</p>
 
-            <div className="progress-track">
+            <div
+              className="progress-track"
+              role="progressbar"
+              aria-label="변환 진행률"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(conversionState.progress)}
+              aria-valuetext={`${Math.round(conversionState.progress)}%, ${getStageLabel(conversionState.currentStage)}`}
+            >
               <div className="progress-fill" style={{ width: `${conversionState.progress}%` }} />
             </div>
             <p className="progress-percent-text">{Math.round(conversionState.progress)}%</p>
@@ -879,9 +907,9 @@ function UploadSection() {
             <div className="result-icon success-icon" aria-hidden="true">
               ✓
             </div>
-            <h2 className="upload-box-title">
+            <h3 className="upload-box-title">
               {conversionState.availableFormats.includes('docx') ? '변환 완료!' : 'TXT만 생성됨'}
-            </h2>
+            </h3>
             <p className="upload-box-support-text">
               {conversionState.availableFormats.includes('docx')
                 ? '파일이 성공적으로 변환되었습니다'
@@ -936,7 +964,7 @@ function UploadSection() {
             <div className="result-icon error-icon" aria-hidden="true">
               !
             </div>
-            <h2 className="upload-box-title">변환 실패</h2>
+            <h3 className="upload-box-title">변환 실패</h3>
             <p className="upload-box-support-text error-user-message">
               {conversionState.errorUserMessage || '변환 중 문제가 발생했습니다. 다시 시도해주세요.'}
             </p>

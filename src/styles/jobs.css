@@ -102,7 +102,11 @@
 }
 
 /* 링크라는 게 색이 아니어도 보이도록 밑줄을 늘 긋는다. */
+/* 제목 한 줄이어도 누르는 높이가 44px 이상 되도록 위아래 여백을 준다 */
 .job-card-title a {
+  display: inline-block;
+  min-height: 44px;
+  padding-block: 0.4rem;
   color: #111827;
   text-decoration: underline;
   text-decoration-thickness: 1px;

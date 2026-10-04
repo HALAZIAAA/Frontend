@@ -4,9 +4,15 @@
 }
 
 .community-main {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 40px 20px 80px;
+  padding-block: 40px 80px;
+}
+
+/* 마이페이지 제목과 같은 크기·간격 */
+.community-title {
+  margin: 0 0 1.5rem;
+  color: #111827;
+  font-size: 1.8rem;
+  font-weight: 800;
 }
 
 .community-filter-card {
@@ -25,7 +31,10 @@
 }
 
 .community-category-tab {
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
   border-radius: 20px;
   border: 1px solid #e5e7eb;
   background-color: #ffffff;
@@ -65,7 +74,8 @@
 
 .community-search-input {
   width: 100%;
-  padding: 9px 12px 9px 32px;
+  min-height: 44px;
+  padding: 0 12px 0 40px;
   border-radius: 999px;
   border: 1px solid #e5e7eb;
   font-size: 1.1rem;
@@ -83,7 +93,8 @@
 
 .community-sort-select {
   min-width: 110px;
-  padding: 8px 10px;
+  min-height: 44px;
+  padding: 0 10px;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
   background-color: #ffffff;
@@ -95,7 +106,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 20px;
+  min-height: 44px;
+  padding: 0 20px;
   border-radius: 10px;
   border: none;
   background-image: linear-gradient(135deg, #7c3aed, #2563eb);
@@ -224,6 +236,8 @@
 
 .post-card-stats {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
 }
 
@@ -231,12 +245,15 @@
   /* 카드 전체를 덮는 제목 링크 영역보다 위에 있어야 따로 눌린다. */
   position: relative;
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   border: none;
   background-color: transparent;
   color: #6b7280;
   font-size: 1.05rem;
   cursor: pointer;
-  padding: 0;
+  padding: 0 4px;
 }
 
 /* 내가 이미 좋아요를 누른 상태 */
@@ -247,14 +264,16 @@
 
 .pagination {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
   margin-top: 8px;
 }
 
 .pagination-button {
-  min-width: 40px;
-  padding: 7px 10px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
   background-color: #ffffff;

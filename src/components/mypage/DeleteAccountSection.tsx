@@ -107,7 +107,9 @@ function DeleteAccountSection() {
         </form>
       )}
 
-      {error && <p className="mypage-message error">{error}</p>}
+      <div role="alert">
+        {error && <p className="mypage-message error">{error}</p>}
+      </div>
     </section>
   )
 }

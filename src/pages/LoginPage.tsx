@@ -6,6 +6,7 @@ import GoogleLoginButton from '../components/auth/GoogleLoginButton'
 import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
 import '../styles/auth.css'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 type LoginFormState = {
   email: string
@@ -19,6 +20,7 @@ type LoginFormErrors = {
 }
 
 function LoginPage() {
+  useDocumentTitle('로그인')
   const { login } = useAuth()
   const navigate = useNavigate()
   const [formState, setFormState] = useState<LoginFormState>({
@@ -66,8 +68,13 @@ function LoginPage() {
     setErrors(validationErrors)
     if (Object.keys(validationErrors).length > 0) {
       setSubmitMessage('')
+      // 틀린 첫 칸으로 옮겨서 무엇을 고쳐야 하는지 바로 듣게 한다.
+      const firstField = validationErrors.email ? 'email' : 'password'
+      document.getElementById(`login-${firstField}`)?.focus()
       return
     }
+
+    setSubmitMessage('')
 
     const result = await login(formState.email, formState.password)
     if (result.ok) {
@@ -99,8 +106,13 @@ function LoginPage() {
           onChange={handleTextInputChange('email')}
           placeholder="email@example.com"
           aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? 'login-email-error' : undefined}
         />
-        {errors.email && <p className="auth-error-message">{errors.email}</p>}
+        {errors.email && (
+          <p id="login-email-error" className="auth-error-message">
+            {errors.email}
+          </p>
+        )}
 
         <label className="auth-field-label" htmlFor="login-password">
           비밀번호
@@ -114,8 +126,13 @@ function LoginPage() {
           onChange={handleTextInputChange('password')}
           placeholder="********"
           aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? 'login-password-error' : undefined}
         />
-        {errors.password && <p className="auth-error-message">{errors.password}</p>}
+        {errors.password && (
+          <p id="login-password-error" className="auth-error-message">
+            {errors.password}
+          </p>
+        )}
 
         <div className="auth-meta-row">
           <label className="auth-checkbox-label" htmlFor="keep-signed-in">
@@ -138,9 +155,12 @@ function LoginPage() {
         </button>
       </form>
 
-      {(submitMessage || socialMessage) && (
-        <p className="auth-feedback-message">{submitMessage || socialMessage}</p>
-      )}
+      {/* 빈 상태로도 늘 자리를 둬야 스크린리더가 나중에 들어온 실패 안내를 읽는다 */}
+      <div role="alert">
+        {(submitMessage || socialMessage) && (
+          <p className="auth-feedback-message">{submitMessage || socialMessage}</p>
+        )}
+      </div>
 
       <p className="auth-switch-text">
         계정이 없으신가요?{' '}
