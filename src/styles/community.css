@@ -9,13 +9,6 @@
   padding: 40px 20px 80px;
 }
 
-.community-title {
-  font-size: 1.95rem;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 24px;
-}
-
 .community-filter-card {
   background-color: #ffffff;
   border-radius: 12px;
@@ -112,10 +105,6 @@
   cursor: pointer;
   text-decoration: none;
   box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
-}
-
-.community-write-button-icon {
-  font-size: 1.15rem;
 }
 
 .community-post-list {
