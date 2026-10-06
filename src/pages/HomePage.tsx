@@ -35,8 +35,8 @@ function HomePage() {
           화면 크기와 상관없이 같은 순서라 보이는 순서 = 읽는 순서다. */}
       <main className="page-container home-main-content">
         <HeroSection
-          title="강의자료를 누구나 읽을 수 있는 문서로"
-          description="PDF·PPTX를 올리면 그림과 표를 글로 설명한 DOCX·TXT 파일로 바꿔 드려요."
+          title="자료를 누구나 읽을 수 있는 문서로"
+          description="PDF·PPTX를 올리면 그림과 표를 글로 설명한 DOCX·TXT 파일로 바꿔요."
         />
 
         <div className="home-upload-area">

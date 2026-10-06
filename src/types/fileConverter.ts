@@ -66,3 +66,23 @@ export type BackendFileListItemResponse = {
   available_formats?: ResultFileFormat[]
   file_type?: string
 }
+
+// 완료 화면 미리보기 (GET /files/{id}/preview). 문단은 실제 TXT·DOCX와 같은 원고에서 온다.
+export type BackendPreviewParagraph = {
+  text: string
+  heading_level: number | null
+  list_level: number | null
+  list_marker: string | null
+  boundary: boolean // [그림 시작] 같은 구간 표시
+}
+
+export type BackendPreviewPage = {
+  page_number: number
+  image_url: string | null
+  paragraphs: BackendPreviewParagraph[]
+}
+
+export type BackendPreviewResponse = {
+  file_type: string
+  pages: BackendPreviewPage[]
+}
