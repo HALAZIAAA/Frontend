@@ -1,4 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  CheckIcon,
+  FilePdfIcon,
+  FilePptIcon,
+  FileTextIcon,
+  TrashIcon,
+  UploadSimpleIcon,
+  XIcon,
+} from '@phosphor-icons/react'
 // [DEMO] 데모 복원 시 아래 fileApi import 를 주석 처리하고 fileMockApi import 주석 해제
 // import { getFileStatus, getRecentFiles, uploadFile } from '../../api/fileMockApi'
 import {
@@ -11,6 +20,7 @@ import {
   uploadFile,
 } from '../../api/fileApi'
 import { useAuth } from '../../lib/auth'
+import { useFeedback } from '../../lib/feedback'
 // [DEMO] 슬라이드 이미지 — 데모 복원 시 주석 해제
 // import { DEMO_SLIDES } from '../../lib/demoSlides'
 import type {
@@ -19,6 +29,8 @@ import type {
   BackendFileStatusResponse,
   ResultFileFormat,
 } from '../../types/fileConverter'
+import { SkeletonList } from '../common/Skeleton'
+import EmptyState from '../common/EmptyState'
 
 type ConversionStatus = 'idle' | 'file_selected' | 'converting' | 'success' | 'error'
 
@@ -36,6 +48,8 @@ type ConversionState = {
   startedAtMs: number | null
   speedSample: SpeedSample | null
   remainingSeconds: number | null
+  // 그림 설명 단계에서 몇 장 중 몇 장을 마쳤는지. 상태 응답을 받기 전에는 null
+  imageCounts: { processed: number; total: number } | null
   errorMessage: string
   errorUserMessage: string
   isSubmitting: boolean
@@ -70,6 +84,7 @@ const DEFAULT_STATE: ConversionState = {
   startedAtMs: null,
   speedSample: null,
   remainingSeconds: null,
+  imageCounts: null,
   errorMessage: '',
   errorUserMessage: '',
   isSubmitting: false,
@@ -100,6 +115,27 @@ function getStageLabel(stage: BackendFileStage): string {
     delete_failed: '파일 정리 실패',
   }
   return stageMap[stage]
+}
+
+const ACCEPTED_EXTENSIONS = ['pdf', 'pptx']
+
+function extensionOf(fileName: string): string {
+  return fileName.split('.').pop()?.toLowerCase() ?? ''
+}
+
+// 진행 화면의 단계 표시. 백엔드는 PDF만 글자 인식(ocr)을 거친다.
+type StepStage = 'extracting' | 'ocr' | 'describing' | 'refining' | 'generating_docx'
+const STEP_LABELS: Record<StepStage, string> = {
+  extracting: '추출',
+  ocr: '글자 인식',
+  describing: '설명',
+  refining: '정리',
+  generating_docx: '문서 생성',
+}
+
+function stepsFor(fileName: string): StepStage[] {
+  const steps: StepStage[] = ['extracting', 'ocr', 'describing', 'refining', 'generating_docx']
+  return extensionOf(fileName) === 'pdf' ? steps : steps.filter((step) => step !== 'ocr')
 }
 
 function getProgressByStage(
@@ -156,6 +192,13 @@ function smoothRemaining(previous: number | null, next: number | null): number |
   if (next === null || previous === null) return next
   // 남은 시간은 줄어드는 게 자연스럽다. 크게 늘어날 때만 새 값을 그대로 받는다.
   return next > previous * 1.3 ? next : Math.min(previous, next)
+}
+
+// '2/10'은 스크린리더가 '2 슬래시 10'처럼 읽어서 말로 풀어 쓴다.
+function formatImageCounts(state: ConversionState): string | null {
+  if (state.currentStage !== 'describing' || !state.imageCounts || state.imageCounts.total <= 0) return null
+  const { processed, total } = state.imageCounts
+  return `이미지 ${total}장 중 ${Math.min(processed, total)}장 완료`
 }
 
 function formatRemaining(seconds: number): string {
@@ -224,6 +267,12 @@ function sortRecentFiles(items: BackendFileListItemResponse[]): BackendFileListI
     if (Number.isNaN(bTime)) return -1
     return bTime - aTime
   })
+}
+
+function formatLabelOf(item: BackendFileListItemResponse): string {
+  const source = (item.file_type ?? extensionOf(item.original_name)).toUpperCase()
+  const targets = availableFormatsOf(item).map((format) => format.toUpperCase()).join('·')
+  return `${source} → ${targets}`
 }
 
 function availableFormatsOf(item: BackendFileListItemResponse): ResultFileFormat[] {
@@ -372,6 +421,8 @@ function UploadSection() {
   const [convertedFiles, setConvertedFiles] = useState<BackendFileListItemResponse[]>([])
   const [isConvertedFilesLoading, setIsConvertedFilesLoading] = useState<boolean>(true)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const { toast } = useFeedback()
   const hasHydratedRef = useRef(false)
   const hasLoadedListRef = useRef(false)
   const prevUserIdRef = useRef<number | null | undefined>(undefined)
@@ -423,6 +474,7 @@ function UploadSection() {
               fileName: latestItem.original_name,
               currentStage: latestItem.current_stage,
               progress: Math.max(initialProgress, persistedFallback?.progress ?? 0),
+              imageCounts: { processed: latestItem.processed_images, total: latestItem.total_images },
             })
             hasHydratedRef.current = true
             return
@@ -526,6 +578,7 @@ function UploadSection() {
             status: 'converting',
             currentStage: response.current_stage,
             progress: Math.max(prevState.progress, nextProgress),
+            imageCounts: { processed: response.processed_images, total: response.total_images },
             startedAtMs,
             speedSample,
             remainingSeconds: smoothRemaining(
@@ -591,9 +644,7 @@ function UploadSection() {
     fileInputRef.current?.click()
   }
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    const selectedFile = event.target.files?.[0]
-    if (!selectedFile) return
+  const selectFile = (selectedFile: File): void => {
     setConversionState({
       ...DEFAULT_STATE,
       status: 'file_selected',
@@ -604,6 +655,38 @@ function UploadSection() {
       progress: 0,
       isSubmitting: false,
     })
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const selectedFile = event.target.files?.[0]
+    if (selectedFile) selectFile(selectedFile)
+  }
+
+  // 끌어다 놓기는 마우스 사용자용 보조 수단이다. 키보드·스크린리더 사용자는 '파일 선택' 버튼을 쓴다.
+  const canDrop = conversionState.status === 'idle' || conversionState.status === 'file_selected'
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>): void => {
+    if (!canDrop) return
+    event.preventDefault()
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>): void => {
+    // 상자 안의 자식 요소로 옮겨갈 때도 dragleave가 와서, 상자 밖으로 나갈 때만 끈다.
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDragOver(false)
+  }
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>): void => {
+    if (!canDrop) return
+    event.preventDefault()
+    setIsDragOver(false)
+    const droppedFile = event.dataTransfer.files[0]
+    if (!droppedFile) return
+    if (!ACCEPTED_EXTENSIONS.includes(extensionOf(droppedFile.name))) {
+      toast('PDF 또는 PPTX 파일만 변환할 수 있어요.', 'error')
+      return
+    }
+    selectFile(droppedFile)
   }
 
   const handleStartConversion = async (): Promise<void> => {
@@ -770,7 +853,12 @@ function UploadSection() {
         {getStatusAnnouncement(conversionState)}
       </p>
 
-      <div className="upload-box">
+      <div
+        className={`upload-box${canDrop ? ' is-drop-target' : ''}${isDragOver ? ' is-drag-over' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <input
           ref={fileInputRef}
           type="file"
@@ -784,41 +872,41 @@ function UploadSection() {
         {conversionState.status === 'idle' && (
           <div className="upload-panel-group">
             <div className="upload-icon-circle" aria-hidden="true">
-              <svg className="upload-icon-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M12 16V5M12 5L7.5 9.5M12 5L16.5 9.5M5 14.5V18C5 18.6 5.4 19 6 19H18C18.6 19 19 18.6 19 18V14.5"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <UploadSimpleIcon className="upload-icon-svg" />
             </div>
 
-            <h3 className="upload-box-title">파일을 드래그하거나 클릭하여 업로드</h3>
-            <p className="upload-box-support-text">최대 100MB까지 지원</p>
-            <button type="button" className="upload-select-button" onClick={handleSelectButtonClick}>
+            <h3 className="upload-box-title">PDF 또는 PPTX 파일을 선택하세요</h3>
+            <p className="upload-box-support-text">또는 이 상자로 파일을 끌어다 놓으세요</p>
+            <button type="button" className="upload-select-button upload-select-button-large" onClick={handleSelectButtonClick}>
               파일 선택
             </button>
+            <ul className="upload-spec-list" role="list" aria-label="변환 조건">
+              <li>PDF·PPTX → DOCX·TXT</li>
+              <li>최대 100MB</li>
+            </ul>
           </div>
         )}
 
         {conversionState.status === 'file_selected' && (
           <div className="upload-panel-group upload-panel-selected">
-            <div className="upload-icon-circle" aria-hidden="true">
-              <svg className="upload-icon-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M12 16V5M12 5L7.5 9.5M12 5L16.5 9.5M5 14.5V18C5 18.6 5.4 19 6 19H18C18.6 19 19 18.6 19 18V14.5"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+            <div className="selected-file-chip">
+              <span className="selected-file-chip-icon" aria-hidden="true">
+                {extensionOf(conversionState.fileName) === 'pdf' ? (
+                  <FilePdfIcon size={28} />
+                ) : extensionOf(conversionState.fileName) === 'pptx' ? (
+                  <FilePptIcon size={28} />
+                ) : (
+                  <FileTextIcon size={28} />
+                )}
+              </span>
+              <span className="selected-file-chip-text">
+                <span className="selected-file-name">{conversionState.fileName}</span>
+                <span className="selected-file-size">
+                  {extensionOf(conversionState.fileName).toUpperCase()}{' '}
+                  {formatFileSize(conversionState.fileSize)}
+                </span>
+              </span>
             </div>
-
-            <p className="selected-file-name">{conversionState.fileName}</p>
-            <p className="selected-file-size">{formatFileSize(conversionState.fileSize)}</p>
 
             <div className="selected-action-row">
               <button type="button" className="upload-select-button" onClick={handleSelectButtonClick}>
@@ -879,12 +967,26 @@ function UploadSection() {
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(conversionState.progress)}
-              aria-valuetext={`${Math.round(conversionState.progress)}%, ${getStageLabel(conversionState.currentStage)}`}
+              aria-valuetext={[
+                `${Math.round(conversionState.progress)}%`,
+                getStageLabel(conversionState.currentStage),
+                formatImageCounts(conversionState),
+              ]
+                .filter(Boolean)
+                .join(', ')}
             >
-              <div className="progress-fill" style={{ width: `${conversionState.progress}%` }} />
+              <div
+                className="progress-fill"
+                style={{ transform: `scaleX(${Math.min(100, Math.max(0, conversionState.progress)) / 100})` }}
+              />
             </div>
             <p className="progress-percent-text">{Math.round(conversionState.progress)}%</p>
             <p className="progress-stage-text">{getStageLabel(conversionState.currentStage)}</p>
+            {/* 한 장마다 읽어 주면 시끄러워서 알림 영역에 넣지 않는다. 진행률 막대의 값(aria-valuetext)으로 필요할 때 들을 수 있다. */}
+            {formatImageCounts(conversionState) && (
+              <p className="progress-image-count">{formatImageCounts(conversionState)}</p>
+            )}
+            <ConversionSteps fileName={conversionState.fileName} stage={conversionState.currentStage} />
             {conversionState.remainingSeconds !== null && (
               <p className="progress-eta-text">{formatRemaining(conversionState.remainingSeconds)}</p>
             )}
@@ -905,7 +1007,7 @@ function UploadSection() {
         {conversionState.status === 'success' && (
           <div className="upload-panel-group upload-panel-result">
             <div className="result-icon success-icon" aria-hidden="true">
-              ✓
+              <CheckIcon size={28} weight="bold" />
             </div>
             <h3 className="upload-box-title">
               {conversionState.availableFormats.includes('docx') ? '변환 완료!' : 'TXT만 생성됨'}
@@ -994,9 +1096,13 @@ function UploadSection() {
         </h3>
 
         {isConvertedFilesLoading ? (
-          <p className="converted-file-list-empty">목록을 불러오는 중...</p>
+          <SkeletonList count={2} lines={2} label="변환된 파일 목록을 불러오는 중" />
         ) : convertedFiles.length === 0 ? (
-          <p className="converted-file-list-empty">아직 변환된 파일이 없습니다.</p>
+          <EmptyState
+            icon={<FileTextIcon size={28} />}
+            title="아직 변환한 파일이 없어요"
+            description="위에서 파일을 올리면 결과가 여기에 쌓여요."
+          />
         ) : (
           <ul className="converted-file-list" aria-label="변환된 파일 목록">
             {convertedFiles.map((item) => {
@@ -1007,22 +1113,13 @@ function UploadSection() {
                 <li key={item.file_id} className="converted-file-list-item">
                   <div className="converted-file-main">
                     <div className="converted-file-icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M7 3H14L19 8V20C19 20.55 18.55 21 18 21H7C6.45 21 6 20.55 6 20V4C6 3.45 6.45 3 7 3Z"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path d="M14 3V8H19" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                      </svg>
+                      <FileTextIcon />
                     </div>
 
                     <div className="converted-file-text">
                       <p className="converted-file-name">{item.original_name}</p>
                       <div className="converted-file-meta-row">
-                        <span className="converted-file-format">PDF → DOCX</span>
+                        <span className="converted-file-format">{formatLabelOf(item)}</span>
                         <span className="converted-file-time">{formatRelativeCreatedAt(item.created_at)}</span>
                         <span className={`converted-file-status-badge is-${statusMeta.variant}`}>{statusMeta.label}</span>
                       </div>
@@ -1041,15 +1138,7 @@ function UploadSection() {
                         handleCancelConversion(item.file_id)
                       }}
                     >
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                          <path
-                            d="M6 6L18 18M18 6L6 18"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                        <XIcon aria-hidden="true" />
                       </button>
                     )}
 
@@ -1089,15 +1178,7 @@ function UploadSection() {
                         handleListItemDelete(item.file_id)
                       }}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path
-                          d="M4 7H20M9 7V5.5C9 4.67 9.67 4 10.5 4H13.5C14.33 4 15 4.67 15 5.5V7M18 7L17.2 19.2C17.16 19.67 16.77 20.03 16.3 20.03H7.7C7.23 20.03 6.84 19.67 6.8 19.2L6 7M10 11V17M14 11V17"
-                          stroke="currentColor"
-                          strokeWidth="1.7"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                      <TrashIcon aria-hidden="true" />
                     </button>
                   </div>
                 </li>
@@ -1107,6 +1188,39 @@ function UploadSection() {
         )}
       </div>
     </section>
+  )
+}
+
+function ConversionSteps({ fileName, stage }: { fileName: string; stage: BackendFileStage }) {
+  const steps = stepsFor(fileName)
+  // 대기·업로드 중이면 -1(아직 시작 전), 단계에 없는 값(PPTX의 ocr 등)도 시작 전으로 둔다.
+  const currentIndex = steps.indexOf(stage as StepStage)
+  return (
+    <div className="conversion-steps">
+      <p className="sr-only">
+        {currentIndex >= 0 ? `${steps.length}단계 중 ${currentIndex + 1}단계` : '변환 준비 중'}
+      </p>
+      <ol className="conversion-step-list" role="list">
+        {steps.map((step, index) => {
+          const state = index < currentIndex ? 'done' : index === currentIndex ? 'current' : 'upcoming'
+          return (
+            <li
+              key={step}
+              className={`conversion-step is-${state}`}
+              aria-current={state === 'current' ? 'step' : undefined}
+            >
+              <span className="conversion-step-marker" aria-hidden="true">
+                {state === 'done' ? <CheckIcon size={14} weight="bold" /> : index + 1}
+              </span>
+              <span className="conversion-step-label">{STEP_LABELS[step]}</span>
+              <span className="sr-only">
+                {state === 'done' ? ' 완료' : state === 'current' ? ' 진행 중' : ' 대기'}
+              </span>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
   )
 }
 

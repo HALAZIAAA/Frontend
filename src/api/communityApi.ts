@@ -150,11 +150,10 @@ function toLikeResult(raw: RawLike): LikeResult {
   return { likes: raw.likes, likedByMe: raw.liked_by_me }
 }
 
-// 목록 조회 - 카테고리 필터, 정렬, 페이지, 검색어 지원 (페이지당 5개)
+// 목록 조회 - 카테고리 필터, 페이지, 검색어 지원 (최신순, 페이지당 5개)
 export async function getPosts(params: GetPostsParams): Promise<GetPostsResult> {
   const query = new URLSearchParams()
   query.set('category', params.category ?? '전체')
-  query.set('sort', params.sort ?? 'latest')
   query.set('page', String(Math.max(1, params.page ?? 1)))
 
   const keyword = params.keyword?.trim()

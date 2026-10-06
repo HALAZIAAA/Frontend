@@ -5,6 +5,14 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BridgeOn</title>
+    <!-- 화면 설정(고대비·글자 크기)을 첫 화면 그리기 전에 적용해 깜빡임을 막는다. src/lib/displaySettings.ts와 같은 키 -->
+    <script>
+      try {
+        var s = JSON.parse(localStorage.getItem('bridgeon-display') || '{}')
+        if (s.highContrast === true) document.documentElement.dataset.contrast = 'high'
+        if (s.textSize === 'large' || s.textSize === 'xlarge') document.documentElement.dataset.textSize = s.textSize
+      } catch (e) {}
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>

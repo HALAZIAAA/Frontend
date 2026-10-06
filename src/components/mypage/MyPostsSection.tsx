@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom'
 import Pagination from '../community/Pagination'
 import { getPosts } from '../../api/communityApi'
 import type { PostSummary } from '../../types/community'
+import { ChatCircleIcon, EyeIcon, ThumbsUpIcon } from '@phosphor-icons/react'
+import { SkeletonList } from '../common/Skeleton'
+import EmptyState from '../common/EmptyState'
+import { NotePencilIcon } from '@phosphor-icons/react'
 
 function MyPostsSection() {
   const [posts, setPosts] = useState<PostSummary[]>([])
@@ -42,11 +46,20 @@ function MyPostsSection() {
       <h2 className="mypage-section-title">내가 쓴 글</h2>
 
       {loading ? (
-        <p className="mypage-list-empty">불러오는 중...</p>
+        <SkeletonList count={2} lines={2} label="내가 쓴 글을 불러오는 중" />
       ) : error ? (
         <p className="mypage-list-empty">{error}</p>
       ) : posts.length === 0 ? (
-        <p className="mypage-list-empty">아직 작성한 글이 없습니다.</p>
+        <EmptyState
+          icon={<NotePencilIcon size={28} />}
+          title="아직 쓴 글이 없어요"
+          description="궁금한 점이나 쓸모 있던 팁을 나눠 보세요."
+          action={
+            <Link to="/community/write" className="empty-state-button">
+              글쓰기
+            </Link>
+          }
+        />
       ) : (
         <>
           <ul className="mypage-list">
@@ -57,7 +70,22 @@ function MyPostsSection() {
                   <span className="mypage-list-title">{post.title}</span>
                 </Link>
                 <span className="mypage-list-sub">
-                  {post.createdAt} · 👁 {post.views} · 👍 {post.likes} · 💬 {post.commentCount}
+                  {post.createdAt}
+                  <span className="icon-stat">
+                    <EyeIcon aria-hidden="true" size={16} />
+                    <span className="sr-only">조회 </span>
+                    {post.views}
+                  </span>
+                  <span className="icon-stat">
+                    <ThumbsUpIcon aria-hidden="true" size={16} />
+                    <span className="sr-only">좋아요 </span>
+                    {post.likes}
+                  </span>
+                  <span className="icon-stat">
+                    <ChatCircleIcon aria-hidden="true" size={16} />
+                    <span className="sr-only">댓글 </span>
+                    {post.commentCount}
+                  </span>
                 </span>
               </li>
             ))}

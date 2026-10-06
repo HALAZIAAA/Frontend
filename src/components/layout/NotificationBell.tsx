@@ -7,6 +7,8 @@ import {
   markRead,
 } from '../../api/notificationApi'
 import type { AppNotification } from '../../types/notification'
+import { BellIcon } from '@phosphor-icons/react'
+import { SkeletonList } from '../common/Skeleton'
 
 const POLL_INTERVAL = 30_000 // 30초마다 안 읽은 개수만 확인
 const DROPDOWN_ID = 'notification-dropdown'
@@ -172,7 +174,7 @@ function NotificationBell() {
         aria-expanded={open}
         aria-controls={open ? DROPDOWN_ID : undefined}
       >
-        🔔
+        <BellIcon aria-hidden="true" size={24} />
         {unread > 0 && (
           <span className="notification-badge">{unread > 99 ? '99+' : unread}</span>
         )}
@@ -197,7 +199,7 @@ function NotificationBell() {
           </div>
 
           {loading ? (
-            <p className="notification-empty">불러오는 중...</p>
+            <SkeletonList count={2} lines={2} label="알림을 불러오는 중" />
           ) : items.length === 0 ? (
             <p className="notification-empty">알림이 없습니다.</p>
           ) : (

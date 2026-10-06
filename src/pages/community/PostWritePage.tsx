@@ -4,14 +4,19 @@ import Navbar from '../../components/layout/Navbar'
 import ImageAttacher from '../../components/community/ImageAttacher'
 import { createPost } from '../../api/communityApi'
 import { useAuth } from '../../lib/auth'
+import { useFeedback } from '../../lib/feedback'
 import type { PostCategory, PostImage } from '../../types/community'
 import '../../styles/community-write.css'
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
+import { ArrowLeftIcon } from '@phosphor-icons/react'
 
 function PostWritePage() {
   useDocumentTitle('글쓰기')
   const navigate = useNavigate()
   const { user, loading } = useAuth()
+  const { toast } = useFeedback()
+  // 빈 칸 안내는 그 칸 바로 아래에 보여 주고, 입력칸과 이어서 스크린리더가 함께 읽게 한다.
+  const [errors, setErrors] = useState<{ title?: string; content?: string }>({})
 
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<PostCategory>('질문')
@@ -33,8 +38,13 @@ function PostWritePage() {
   }
 
   const handleSubmit = async () => {
-    if (!title.trim() || !content.trim()) {
-      alert('제목과 내용을 입력해주세요.')
+    const nextErrors = {
+      title: title.trim() ? undefined : '제목을 입력해주세요.',
+      content: content.trim() ? undefined : '내용을 입력해주세요.',
+    }
+    setErrors(nextErrors)
+    if (nextErrors.title || nextErrors.content) {
+      document.getElementById(nextErrors.title ? 'post-title' : 'post-content')?.focus()
       return
     }
 
@@ -48,7 +58,7 @@ function PostWritePage() {
       })
       navigate(`/community/${created.id}`)
     } catch (error) {
-      alert(error instanceof Error ? error.message : '글 등록에 실패했습니다.')
+      toast(error instanceof Error ? error.message : '글 등록에 실패했습니다.', 'error')
     } finally {
       setSubmitting(false)
     }
@@ -56,11 +66,12 @@ function PostWritePage() {
 
   return (
     <div className="write-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+      <Navbar />
 
       <main className="page-container write-main">
         <Link to="/community" className="write-back-link">
-          ← 목록으로
+          <ArrowLeftIcon aria-hidden="true" size={18} />
+          목록으로
         </Link>
 
         <section className="write-card" aria-label="게시글 작성 폼">
@@ -78,7 +89,14 @@ function PostWritePage() {
                 value={title}
                 placeholder="제목을 입력하세요"
                 onChange={(e) => setTitle(e.target.value)}
+                aria-invalid={Boolean(errors.title)}
+                aria-describedby={errors.title ? 'post-title-error' : undefined}
               />
+              {errors.title && (
+                <p id="post-title-error" className="form-error" role="alert">
+                  {errors.title}
+                </p>
+              )}
             </div>
 
             <div className="form-field">
@@ -94,8 +112,6 @@ function PostWritePage() {
                 {/* 공지는 관리자만 쓸 수 있어서 그 외에는 아예 보여주지 않는다. */}
                 {user.role === 'admin' && <option value="공지">공지</option>}
                 <option value="질문">질문</option>
-                <option value="팁">팁</option>
-                <option value="후기">후기</option>
               </select>
             </div>
 
@@ -109,7 +125,14 @@ function PostWritePage() {
                 value={content}
                 placeholder="내용을 입력하세요"
                 onChange={(e) => setContent(e.target.value)}
+                aria-invalid={Boolean(errors.content)}
+                aria-describedby={errors.content ? 'post-content-error' : undefined}
               />
+              {errors.content && (
+                <p id="post-content-error" className="form-error" role="alert">
+                  {errors.content}
+                </p>
+              )}
             </div>
 
             <ImageAttacher images={images} onChange={setImages} />

@@ -1,5 +1,4 @@
-export type PostCategory = '공지' | '질문' | '팁' | '후기'
-export type SortType = 'latest' | 'popular'
+export type PostCategory = '공지' | '질문'
 
 export interface Comment {
   id: number
@@ -45,7 +44,6 @@ export interface PostDetail extends PostSummary {
 
 export interface GetPostsParams {
   category?: PostCategory | '전체'
-  sort?: SortType
   page?: number
   keyword?: string
   author?: 'me'

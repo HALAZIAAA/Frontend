@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import { useAuth } from '../lib/auth'
+import { useFeedback } from '../lib/feedback'
 import '../styles/navbar.css'
 import '../styles/mypage.css'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { ArrowLeftIcon } from '@phosphor-icons/react'
 
 function ChangeNicknamePage() {
   useDocumentTitle('닉네임 변경')
   const { user, loading, updateNickname } = useAuth()
+  const { toast } = useFeedback()
   const navigate = useNavigate()
   const [nickname, setNickname] = useState('')
   const [message, setMessage] = useState('')
@@ -23,7 +26,7 @@ function ChangeNicknamePage() {
   if (!user) {
     return (
       <div className="mypage-page">
-        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+        <Navbar />
 
         <main className="page-container mypage-main">
           <h1 className="mypage-title">닉네임 변경</h1>
@@ -60,7 +63,7 @@ function ChangeNicknamePage() {
     setSaving(false)
 
     if (result.ok) {
-      alert('닉네임이 변경되었습니다.')
+      toast('닉네임이 변경되었습니다.', 'success')
       navigate('/mypage')
     } else {
       setIsError(true)
@@ -70,11 +73,12 @@ function ChangeNicknamePage() {
 
   return (
     <div className="mypage-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+      <Navbar />
 
       <main className="page-container mypage-main">
         <Link to="/mypage" className="mypage-back-link">
-          ← 마이페이지
+          <ArrowLeftIcon aria-hidden="true" size={18} />
+          마이페이지
         </Link>
 
         <h1 className="mypage-title">닉네임 변경</h1>

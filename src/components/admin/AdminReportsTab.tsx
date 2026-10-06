@@ -4,11 +4,13 @@ import Pagination from '../community/Pagination'
 import { getReports, setReportStatus } from '../../api/adminApi'
 import { deletePost, deleteComment } from '../../api/communityApi'
 import { useTabs } from '../../lib/useTabs'
+import { useFeedback } from '../../lib/feedback'
 import {
   REPORT_STATUS_LABEL,
   type AdminReport,
   type ReportStatus,
 } from '../../types/report'
+import { SkeletonList } from '../common/Skeleton'
 
 const FILTERS: Array<{ key: ReportStatus | ''; label: string }> = [
   { key: 'pending', label: '대기' },
@@ -19,6 +21,7 @@ const FILTERS: Array<{ key: ReportStatus | ''; label: string }> = [
 const FILTER_KEYS = FILTERS.map((item) => item.key)
 
 function AdminReportsTab() {
+  const { toast, confirm } = useFeedback()
   const [filter, setFilter] = useState<ReportStatus | ''>('pending')
   const [page, setPage] = useState(1)
   const [reports, setReports] = useState<AdminReport[]>([])
@@ -83,7 +86,7 @@ function AdminReportsTab() {
         setPendingCount((prev) => (status === 'pending' ? prev + 1 : Math.max(0, prev - 1)))
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : '상태 변경에 실패했습니다.')
+      toast(err instanceof Error ? err.message : '상태 변경에 실패했습니다.', 'error')
     } finally {
       setBusyId(null)
     }
@@ -92,7 +95,13 @@ function AdminReportsTab() {
   // 신고된 대상을 지우고 신고도 처리완료로 넘긴다.
   const handleDeleteTarget = async (report: AdminReport) => {
     const label = report.targetType === 'post' ? '게시글' : '댓글'
-    if (!window.confirm(`신고된 ${label}을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return
+    const ok = await confirm({
+      title: `신고된 ${label}을(를) 삭제할까요?`,
+      message: '되돌릴 수 없습니다. 신고는 처리완료로 바뀝니다.',
+      confirmLabel: '삭제',
+      danger: true,
+    })
+    if (!ok) return
 
     setBusyId(report.id)
     try {
@@ -103,8 +112,9 @@ function AdminReportsTab() {
       }
       await setReportStatus(report.id, 'resolved')
       setReloadKey((key) => key + 1)
+      toast(`신고된 ${label}을(를) 삭제했습니다.`, 'success')
     } catch (err) {
-      alert(err instanceof Error ? err.message : '삭제에 실패했습니다.')
+      toast(err instanceof Error ? err.message : '삭제에 실패했습니다.', 'error')
     } finally {
       setBusyId(null)
     }
@@ -133,7 +143,7 @@ function AdminReportsTab() {
       {/* 선택된 상태 필터의 목록. 스크린리더가 어느 필터의 결과인지 알 수 있게 탭과 이어 둔다. */}
       <div {...panelProps}>
         {loading ? (
-          <p className="admin-empty">불러오는 중...</p>
+          <SkeletonList count={4} lines={2} label="신고 목록을 불러오는 중" />
         ) : error ? (
           <p className="admin-empty">{error}</p>
         ) : reports.length === 0 ? (

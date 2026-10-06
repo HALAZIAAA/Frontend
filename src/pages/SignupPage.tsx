@@ -7,6 +7,8 @@ import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
 import '../styles/auth.css'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { CheckCircleIcon, CircleIcon } from '@phosphor-icons/react'
+import PasswordInput from '../components/auth/PasswordInput'
 
 type SignupFormState = {
   email: string
@@ -19,6 +21,9 @@ type SignupFormErrors = {
   password?: string
   confirmPassword?: string
 }
+
+// 비밀번호 변경(account_service)의 8자 규칙과 맞춘다. 가입 API에는 아직 길이 검사가 없다.
+const MIN_PASSWORD_LENGTH = 8
 
 function SignupPage() {
   useDocumentTitle('회원가입')
@@ -50,6 +55,8 @@ function SignupPage() {
     }
     if (!formState.password.trim()) {
       nextErrors.password = '비밀번호를 입력해주세요.'
+    } else if (formState.password.length < MIN_PASSWORD_LENGTH) {
+      nextErrors.password = `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`
     }
     if (formState.password !== formState.confirmPassword) {
       nextErrors.confirmPassword = '비밀번호가 일치하지 않습니다.'
@@ -106,6 +113,7 @@ function SignupPage() {
           value={formState.email}
           onChange={handleChange('email')}
           placeholder="email@example.com"
+          autoComplete="email"
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'signup-email-error' : undefined}
         />
@@ -118,16 +126,15 @@ function SignupPage() {
         <label className="auth-field-label" htmlFor="signup-password">
           비밀번호
         </label>
-        <input
+        <PasswordInput
           id="signup-password"
           name="password"
-          type="password"
-          className="auth-input"
+          label="비밀번호"
           value={formState.password}
           onChange={handleChange('password')}
-          placeholder="********"
-          aria-invalid={Boolean(errors.password)}
-          aria-describedby={errors.password ? 'signup-password-error' : undefined}
+          autoComplete="new-password"
+          invalid={Boolean(errors.password)}
+          describedBy={errors.password ? 'signup-password-error password-rules' : 'password-rules'}
         />
         {errors.password && (
           <p id="signup-password-error" className="auth-error-message">
@@ -138,22 +145,32 @@ function SignupPage() {
         <label className="auth-field-label" htmlFor="signup-confirm-password">
           비밀번호 확인
         </label>
-        <input
+        <PasswordInput
           id="signup-confirm-password"
           name="confirmPassword"
-          type="password"
-          className="auth-input"
+          label="비밀번호 확인"
           value={formState.confirmPassword}
           onChange={handleChange('confirmPassword')}
-          placeholder="********"
-          aria-invalid={Boolean(errors.confirmPassword)}
-          aria-describedby={errors.confirmPassword ? 'signup-confirm-password-error' : undefined}
+          autoComplete="new-password"
+          invalid={Boolean(errors.confirmPassword)}
+          describedBy={errors.confirmPassword ? 'signup-confirm-password-error password-rules' : 'password-rules'}
         />
         {errors.confirmPassword && (
           <p id="signup-confirm-password-error" className="auth-error-message">
             {errors.confirmPassword}
           </p>
         )}
+
+        {/* 입력하는 동안 조건을 눈으로 확인한다. 글자마다 읽어주면 시끄러워서 live 영역으로 두지 않고,
+            두 비밀번호 칸의 설명(aria-describedby)으로 연결해 칸에 들어갈 때 현재 상태를 듣게 한다. */}
+        <ul id="password-rules" className="password-rules" aria-label="비밀번호 조건">
+          <PasswordRule met={formState.password.length >= MIN_PASSWORD_LENGTH}>
+            {MIN_PASSWORD_LENGTH}자 이상
+          </PasswordRule>
+          <PasswordRule met={formState.confirmPassword !== '' && formState.password === formState.confirmPassword}>
+            비밀번호 확인과 일치
+          </PasswordRule>
+        </ul>
 
         <button type="submit" className="auth-primary-button">
           회원가입
@@ -174,6 +191,16 @@ function SignupPage() {
         </Link>
       </p>
     </AuthLayout>
+  )
+}
+
+function PasswordRule({ met, children }: { met: boolean; children: React.ReactNode }) {
+  return (
+    <li className={met ? 'password-rule met' : 'password-rule'}>
+      {met ? <CheckCircleIcon aria-hidden="true" size={18} weight="fill" /> : <CircleIcon aria-hidden="true" size={18} />}
+      {children}
+      <span className="sr-only">{met ? ' 충족' : ' 미충족'}</span>
+    </li>
   )
 }
 

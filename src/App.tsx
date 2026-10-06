@@ -7,6 +7,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ChangePasswordPage from './pages/ChangePasswordPage'
 import ChangeNicknamePage from './pages/ChangeNicknamePage'
 import CommunityPage from './pages/community/CommunityPage'
+import JobsPage from './pages/JobsPage'
 import PostDetailPage from './pages/community/PostDetailPage'
 import PostEditPage from './pages/community/PostEditPage'
 import PostWritePage from './pages/community/PostWritePage'
@@ -27,6 +28,7 @@ function App() {
       <Route path="/community/write" element={<PostWritePage />} />
       <Route path="/community/:id/edit" element={<PostEditPage />} />
       <Route path="/community/:id" element={<PostDetailPage />} />
+      <Route path="/jobs" element={<JobsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

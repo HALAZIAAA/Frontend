@@ -4,15 +4,21 @@ import Navbar from '../../components/layout/Navbar'
 import ImageAttacher from '../../components/community/ImageAttacher'
 import { getPost, updatePost } from '../../api/communityApi'
 import { useAuth } from '../../lib/auth'
+import { useFeedback } from '../../lib/feedback'
 import type { PostCategory, PostDetail, PostImage } from '../../types/community'
 import '../../styles/community-write.css'
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
+import { ArrowLeftIcon } from '@phosphor-icons/react'
+import { SkeletonList } from '../../components/common/Skeleton'
 
 function PostEditPage() {
   useDocumentTitle('글 수정')
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
+  const { toast } = useFeedback()
+  // 빈 칸 안내는 그 칸 바로 아래에 보여 주고, 입력칸과 이어서 스크린리더가 함께 읽게 한다.
+  const [errors, setErrors] = useState<{ title?: string; content?: string }>({})
 
   const postId = Number(id)
   const [post, setPost] = useState<PostDetail | null>(null)
@@ -53,8 +59,13 @@ function PostEditPage() {
   }
 
   const handleSubmit = async () => {
-    if (!title.trim() || !content.trim()) {
-      alert('제목과 내용을 입력해주세요.')
+    const nextErrors = {
+      title: title.trim() ? undefined : '제목을 입력해주세요.',
+      content: content.trim() ? undefined : '내용을 입력해주세요.',
+    }
+    setErrors(nextErrors)
+    if (nextErrors.title || nextErrors.content) {
+      document.getElementById(nextErrors.title ? 'edit-post-title' : 'edit-post-content')?.focus()
       return
     }
 
@@ -68,7 +79,7 @@ function PostEditPage() {
       })
       navigate(`/community/${postId}`)
     } catch (error) {
-      alert(error instanceof Error ? error.message : '수정에 실패했습니다.')
+      toast(error instanceof Error ? error.message : '수정에 실패했습니다.', 'error')
     } finally {
       setSubmitting(false)
     }
@@ -77,10 +88,10 @@ function PostEditPage() {
   if (loading) {
     return (
       <div className="write-page">
-        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+        <Navbar />
         <main className="page-container write-main">
           <div className="post-detail-not-found">
-            <p>불러오는 중...</p>
+            <SkeletonList count={1} lines={6} card label="게시글을 불러오는 중" />
           </div>
         </main>
       </div>
@@ -91,7 +102,7 @@ function PostEditPage() {
   if (!post || !post.isMine) {
     return (
       <div className="write-page">
-        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+        <Navbar />
         <main className="page-container write-main">
           <div className="post-detail-not-found">
             <p>{post ? '본인이 작성한 글만 수정할 수 있습니다.' : '존재하지 않는 게시글입니다'}</p>
@@ -104,11 +115,12 @@ function PostEditPage() {
 
   return (
     <div className="write-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+      <Navbar />
 
       <main className="page-container write-main">
         <Link to={`/community/${postId}`} className="write-back-link">
-          ← 게시글로
+          <ArrowLeftIcon aria-hidden="true" size={18} />
+          게시글로
         </Link>
 
         <section className="write-card" aria-label="게시글 수정 폼">
@@ -126,7 +138,14 @@ function PostEditPage() {
                 value={title}
                 placeholder="제목을 입력하세요"
                 onChange={(e) => setTitle(e.target.value)}
+                aria-invalid={Boolean(errors.title)}
+                aria-describedby={errors.title ? 'edit-post-title-error' : undefined}
               />
+              {errors.title && (
+                <p id="edit-post-title-error" className="form-error" role="alert">
+                  {errors.title}
+                </p>
+              )}
             </div>
 
             <div className="form-field">
@@ -143,8 +162,6 @@ function PostEditPage() {
                   <option value="공지">공지</option>
                 )}
                 <option value="질문">질문</option>
-                <option value="팁">팁</option>
-                <option value="후기">후기</option>
               </select>
             </div>
 
@@ -158,7 +175,14 @@ function PostEditPage() {
                 value={content}
                 placeholder="내용을 입력하세요"
                 onChange={(e) => setContent(e.target.value)}
+                aria-invalid={Boolean(errors.content)}
+                aria-describedby={errors.content ? 'edit-post-content-error' : undefined}
               />
+              {errors.content && (
+                <p id="edit-post-content-error" className="form-error" role="alert">
+                  {errors.content}
+                </p>
+              )}
             </div>
 
             <ImageAttacher images={images} onChange={setImages} />

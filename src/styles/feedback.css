@@ -1,0 +1,175 @@
+/* 화면 아래 알림(토스트)과 확인 창. 강조색은 사이트 공통 파랑 하나만 쓴다. */
+
+.toast-stack {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 60;
+  width: min(28rem, calc(100vw - 32px));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.toast-region {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast-region:not(:empty) + .toast-region:not(:empty) {
+  margin-top: 8px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 16px;
+  border-radius: var(--radius-md);
+  background-color: #111827;
+  color: #ffffff;
+  box-shadow: var(--shadow-float);
+  pointer-events: auto;
+}
+
+/* 색만으로 구분하지 않는다. 실패 알림은 문장 자체가 실패를 말하고, 왼쪽 표시는 거들 뿐이다. */
+.toast-error {
+  background-color: #7f1d1d;
+}
+
+.toast-success {
+  background-color: #14532d;
+}
+
+.toast-message {
+  flex: 1;
+  margin: 0;
+  padding-block: 10px;
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+.toast-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.toast-close:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast {
+    animation: toast-in 180ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .confirm-dialog {
+    animation: confirm-in 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes confirm-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  background-color: rgba(17, 24, 39, 0.45);
+}
+
+.confirm-dialog {
+  width: min(100%, 26rem);
+  padding: 1.4rem;
+  border-radius: var(--radius-md);
+  background-color: #ffffff;
+  box-shadow: var(--shadow-float);
+}
+
+.confirm-title {
+  margin: 0 0 0.5rem;
+  color: var(--text-strong);
+  font-size: var(--text-md);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.confirm-message {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 1.25rem;
+}
+
+.confirm-cancel,
+.confirm-ok {
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirm-cancel {
+  border: 1px solid var(--border-strong);
+  background-color: #ffffff;
+  color: var(--text-body);
+}
+
+.confirm-cancel:hover {
+  background-color: #f9fafb;
+}
+
+.confirm-ok {
+  border: 1px solid #2563eb;
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.confirm-ok:hover {
+  background-color: #1d4ed8;
+}
+
+.confirm-ok.danger {
+  border-color: #dc2626;
+  background-color: #dc2626;
+}
+
+.confirm-ok.danger:hover {
+  background-color: #b91c1c;
+}

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import Pagination from '../community/Pagination'
 import { getUsers, setUserActive, setUserRole } from '../../api/adminApi'
 import type { AdminUser } from '../../types/admin'
+import { useFeedback } from '../../lib/feedback'
+import { SkeletonList } from '../common/Skeleton'
 
 type AdminUsersTabProps = {
   // 자기 자신은 정지·강등할 수 없어서 버튼을 잠근다.
@@ -17,6 +19,7 @@ function describeProvider(provider: string): string {
 }
 
 function AdminUsersTab({ myId }: AdminUsersTabProps) {
+  const { toast, confirm } = useFeedback()
   const [keyword, setKeyword] = useState('')
   const [searchKeyword, setSearchKeyword] = useState('')
   const [page, setPage] = useState(1)
@@ -69,13 +72,20 @@ function AdminUsersTab({ myId }: AdminUsersTabProps) {
 
   const handleToggleActive = async (target: AdminUser) => {
     const action = target.isActive ? '정지' : '정지 해제'
-    if (!window.confirm(`'${target.nickname}' 계정을 ${action}할까요?`)) return
+    const ok = await confirm({
+      title: `'${target.nickname}' 계정을 ${action}할까요?`,
+      message: target.isActive ? '정지하면 바로 로그아웃되고, 글과 댓글이 커뮤니티에서 숨겨집니다.' : undefined,
+      confirmLabel: action,
+      danger: target.isActive,
+    })
+    if (!ok) return
 
     setBusyId(target.id)
     try {
       replaceUser(await setUserActive(target.id, !target.isActive))
+      toast(`'${target.nickname}' 계정을 ${action}했습니다.`, 'success')
     } catch (err) {
-      alert(err instanceof Error ? err.message : `${action}에 실패했습니다.`)
+      toast(err instanceof Error ? err.message : `${action}에 실패했습니다.`, 'error')
     } finally {
       setBusyId(null)
     }
@@ -84,13 +94,18 @@ function AdminUsersTab({ myId }: AdminUsersTabProps) {
   const handleToggleRole = async (target: AdminUser) => {
     const nextRole = target.role === 'admin' ? 'user' : 'admin'
     const action = nextRole === 'admin' ? '관리자로 임명' : '관리자 권한 회수'
-    if (!window.confirm(`'${target.nickname}' 계정을 ${action}할까요?`)) return
+    const ok = await confirm({
+      title: `'${target.nickname}' 계정을 ${action}할까요?`,
+      confirmLabel: nextRole === 'admin' ? '임명' : '권한 회수',
+    })
+    if (!ok) return
 
     setBusyId(target.id)
     try {
       replaceUser(await setUserRole(target.id, nextRole))
+      toast(`'${target.nickname}' 계정의 권한을 바꿨습니다.`, 'success')
     } catch (err) {
-      alert(err instanceof Error ? err.message : '권한 변경에 실패했습니다.')
+      toast(err instanceof Error ? err.message : '권한 변경에 실패했습니다.', 'error')
     } finally {
       setBusyId(null)
     }
@@ -111,7 +126,7 @@ function AdminUsersTab({ myId }: AdminUsersTabProps) {
       </div>
 
       {loading ? (
-        <p className="admin-empty">불러오는 중...</p>
+        <SkeletonList count={4} lines={2} label="사용자 목록을 불러오는 중" />
       ) : error ? (
         <p className="admin-empty">{error}</p>
       ) : users.length === 0 ? (
