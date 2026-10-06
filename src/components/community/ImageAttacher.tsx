@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { uploadPostImage } from '../../api/communityApi'
 import type { PostImage } from '../../types/community'
+import { XIcon } from '@phosphor-icons/react'
 
 const MAX_IMAGES = 5
 
@@ -86,7 +87,7 @@ function ImageAttacher({ images, onChange }: ImageAttacherProps) {
                 onClick={() => handleRemove(image.id)}
                 aria-label="이미지 제거"
               >
-                ✕
+                <XIcon aria-hidden="true" size={14} weight="bold" />
               </button>
             </li>
           ))}

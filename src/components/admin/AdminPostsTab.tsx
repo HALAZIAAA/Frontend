@@ -4,8 +4,12 @@ import Pagination from '../community/Pagination'
 import { getAdminPosts } from '../../api/adminApi'
 import { deletePost } from '../../api/communityApi'
 import type { AdminPost } from '../../types/admin'
+import { useFeedback } from '../../lib/feedback'
+import { ChatCircleIcon, EyeIcon } from '@phosphor-icons/react'
+import { SkeletonList } from '../common/Skeleton'
 
 function AdminPostsTab() {
+  const { toast, confirm } = useFeedback()
   const [keyword, setKeyword] = useState('')
   const [searchKeyword, setSearchKeyword] = useState('')
   const [page, setPage] = useState(1)
@@ -52,15 +56,22 @@ function AdminPostsTab() {
   }, [searchKeyword, page])
 
   const handleDelete = async (target: AdminPost) => {
-    if (!window.confirm(`'${target.title}' 글을 삭제할까요? 되돌릴 수 없습니다.`)) return
+    const ok = await confirm({
+      title: `'${target.title}' 글을 삭제할까요?`,
+      message: '되돌릴 수 없습니다.',
+      confirmLabel: '삭제',
+      danger: true,
+    })
+    if (!ok) return
 
     setBusyId(target.id)
     try {
       await deletePost(target.id)
       setPosts((prev) => prev.filter((item) => item.id !== target.id))
       setTotal((prev) => Math.max(0, prev - 1))
+      toast('글을 삭제했습니다.', 'success')
     } catch (err) {
-      alert(err instanceof Error ? err.message : '삭제에 실패했습니다.')
+      toast(err instanceof Error ? err.message : '삭제에 실패했습니다.', 'error')
     } finally {
       setBusyId(null)
     }
@@ -81,7 +92,7 @@ function AdminPostsTab() {
       </div>
 
       {loading ? (
-        <p className="admin-empty">불러오는 중...</p>
+        <SkeletonList count={4} lines={2} label="게시글 목록을 불러오는 중" />
       ) : error ? (
         <p className="admin-empty">{error}</p>
       ) : posts.length === 0 ? (
@@ -100,7 +111,17 @@ function AdminPostsTab() {
                     {!post.authorActive && <span className="admin-badge stopped">숨김</span>}
                   </span>
                   <span className="admin-row-sub">
-                    {post.author} · {post.createdAt} · 👁 {post.views} · 💬 {post.commentCount}
+                    {post.author} · {post.createdAt}
+                    <span className="icon-stat">
+                      <EyeIcon aria-hidden="true" size={16} />
+                      <span className="sr-only">조회 </span>
+                      {post.views}
+                    </span>
+                    <span className="icon-stat">
+                      <ChatCircleIcon aria-hidden="true" size={16} />
+                      <span className="sr-only">댓글 </span>
+                      {post.commentCount}
+                    </span>
                   </span>
                 </div>
 

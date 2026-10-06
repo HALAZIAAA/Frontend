@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import { useAuth } from '../lib/auth'
+import { useFeedback } from '../lib/feedback'
 import '../styles/navbar.css'
 import '../styles/mypage.css'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { ArrowLeftIcon } from '@phosphor-icons/react'
 
 function ChangePasswordPage() {
   useDocumentTitle('비밀번호 변경')
   const { user, loading, changePassword } = useAuth()
+  const { toast } = useFeedback()
   const navigate = useNavigate()
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
@@ -26,7 +29,7 @@ function ChangePasswordPage() {
   if (!user || !user.provider.includes('local')) {
     return (
       <div className="mypage-page">
-        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+        <Navbar />
 
         <main className="page-container mypage-main">
           <h1 className="mypage-title">비밀번호 변경</h1>
@@ -61,7 +64,7 @@ function ChangePasswordPage() {
     setSaving(false)
 
     if (result.ok) {
-      alert('비밀번호가 변경되었습니다. 다른 기기는 로그아웃됩니다.')
+      toast('비밀번호가 변경되었습니다. 다른 기기는 로그아웃됩니다.', 'success')
       navigate('/mypage')
     } else {
       setIsError(true)
@@ -71,11 +74,12 @@ function ChangePasswordPage() {
 
   return (
     <div className="mypage-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+      <Navbar />
 
       <main className="page-container mypage-main">
         <Link to="/mypage" className="mypage-back-link">
-          ← 마이페이지
+          <ArrowLeftIcon aria-hidden="true" size={18} />
+          마이페이지
         </Link>
 
         <h1 className="mypage-title">비밀번호 변경</h1>

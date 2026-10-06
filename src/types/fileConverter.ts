@@ -64,4 +64,5 @@ export type BackendFileListItemResponse = {
   result_ready: boolean
   download_url: string | null
   available_formats?: ResultFileFormat[]
+  file_type?: string
 }

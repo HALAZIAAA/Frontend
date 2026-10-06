@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getMyComments } from '../../api/communityApi'
 import type { MyComment } from '../../types/community'
+import { ThumbsUpIcon } from '@phosphor-icons/react'
+import { SkeletonList } from '../common/Skeleton'
+import EmptyState from '../common/EmptyState'
+import { ChatCircleDotsIcon } from '@phosphor-icons/react'
 
 const LIMIT = 10
 
@@ -43,11 +47,20 @@ function MyCommentsSection() {
       </h2>
 
       {loading ? (
-        <p className="mypage-list-empty">불러오는 중...</p>
+        <SkeletonList count={2} lines={2} label="내가 쓴 댓글을 불러오는 중" />
       ) : error ? (
         <p className="mypage-list-empty">{error}</p>
       ) : comments.length === 0 ? (
-        <p className="mypage-list-empty">아직 작성한 댓글이 없습니다.</p>
+        <EmptyState
+          icon={<ChatCircleDotsIcon size={28} />}
+          title="아직 쓴 댓글이 없어요"
+          description="커뮤니티 글에 의견을 남겨 보세요."
+          action={
+            <Link to="/community" className="empty-state-button">
+              커뮤니티 둘러보기
+            </Link>
+          }
+        />
       ) : (
         <>
           <ul className="mypage-list">
@@ -57,7 +70,12 @@ function MyCommentsSection() {
                   <span className="mypage-list-title">{comment.content}</span>
                 </Link>
                 <span className="mypage-list-sub">
-                  {comment.postTitle} · {comment.createdAt} · 👍 {comment.likes}
+                  {comment.postTitle} · {comment.createdAt}
+                  <span className="icon-stat">
+                    <ThumbsUpIcon aria-hidden="true" size={16} />
+                    <span className="sr-only">좋아요 </span>
+                    {comment.likes}
+                  </span>
                 </span>
               </li>
             ))}

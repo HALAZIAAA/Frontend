@@ -31,7 +31,7 @@ function MyPage() {
   if (!user) {
     return (
       <div className="mypage-page">
-        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+        <Navbar />
 
         <main className="page-container mypage-main">
           <h1 className="mypage-title">마이페이지</h1>
@@ -49,7 +49,7 @@ function MyPage() {
 
   return (
     <div className="mypage-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+      <Navbar />
 
       <main className="page-container mypage-main">
         <h1 className="mypage-title">마이페이지</h1>

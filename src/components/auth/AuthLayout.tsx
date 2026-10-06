@@ -9,7 +9,7 @@ type AuthLayoutProps = {
 function AuthLayout({ title, children }: AuthLayoutProps) {
   return (
     <div className="homepage-wrapper">
-      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+      <Navbar />
       <main className="page-container auth-page-main" aria-labelledby="auth-page-title">
         <section className="auth-card">
           <h1 id="auth-page-title" className="auth-card-title">

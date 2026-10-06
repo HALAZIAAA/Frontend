@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/auth/AuthLayout'
 import AuthDivider from '../components/auth/AuthDivider'
 import GoogleLoginButton from '../components/auth/GoogleLoginButton'
+import PasswordInput from '../components/auth/PasswordInput'
 import { useAuth } from '../lib/auth'
 import '../styles/navbar.css'
 import '../styles/auth.css'
@@ -11,7 +12,6 @@ import { useDocumentTitle } from '../lib/useDocumentTitle'
 type LoginFormState = {
   email: string
   password: string
-  keepSignedIn: boolean
 }
 
 type LoginFormErrors = {
@@ -26,7 +26,6 @@ function LoginPage() {
   const [formState, setFormState] = useState<LoginFormState>({
     email: '',
     password: '',
-    keepSignedIn: false,
   })
   const [errors, setErrors] = useState<LoginFormErrors>({})
   const [submitMessage, setSubmitMessage] = useState<string>('')
@@ -42,12 +41,6 @@ function LoginPage() {
       }))
     }
 
-  const handleKeepSignedInChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    setFormState((prevState) => ({
-      ...prevState,
-      keepSignedIn: event.target.checked,
-    }))
-  }
 
   const validate = (): LoginFormErrors => {
     const nextErrors: LoginFormErrors = {}
@@ -105,6 +98,7 @@ function LoginPage() {
           value={formState.email}
           onChange={handleTextInputChange('email')}
           placeholder="email@example.com"
+          autoComplete="email"
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'login-email-error' : undefined}
         />
@@ -117,16 +111,15 @@ function LoginPage() {
         <label className="auth-field-label" htmlFor="login-password">
           비밀번호
         </label>
-        <input
+        <PasswordInput
           id="login-password"
           name="password"
-          type="password"
-          className="auth-input"
+          label="비밀번호"
           value={formState.password}
           onChange={handleTextInputChange('password')}
-          placeholder="********"
-          aria-invalid={Boolean(errors.password)}
-          aria-describedby={errors.password ? 'login-password-error' : undefined}
+          autoComplete="current-password"
+          invalid={Boolean(errors.password)}
+          describedBy={errors.password ? 'login-password-error' : undefined}
         />
         {errors.password && (
           <p id="login-password-error" className="auth-error-message">
@@ -134,17 +127,8 @@ function LoginPage() {
           </p>
         )}
 
+        {/* '로그인 상태 유지'는 실제로 아무 일도 하지 않아서 뺐다. 로그인은 쿠키로 48시간 유지된다. */}
         <div className="auth-meta-row">
-          <label className="auth-checkbox-label" htmlFor="keep-signed-in">
-            <input
-              id="keep-signed-in"
-              name="keepSignedIn"
-              type="checkbox"
-              checked={formState.keepSignedIn}
-              onChange={handleKeepSignedInChange}
-            />
-            로그인 상태 유지
-          </label>
           <Link to="/forgot-password" className="auth-text-button">
             비밀번호 찾기
           </Link>

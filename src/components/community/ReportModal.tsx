@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createReport } from '../../api/communityApi'
+import { useFeedback } from '../../lib/feedback'
 import { REPORT_REASONS, type ReportReason, type ReportTargetType } from '../../types/report'
 
 type ReportModalProps = {
@@ -12,6 +13,7 @@ type ReportModalProps = {
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
 
 function ReportModal({ targetType, targetId, onClose }: ReportModalProps) {
+  const { toast } = useFeedback()
   const [reason, setReason] = useState<ReportReason>(REPORT_REASONS[0])
   const [detail, setDetail] = useState('')
   const [error, setError] = useState('')
@@ -65,7 +67,7 @@ function ReportModal({ targetType, targetId, onClose }: ReportModalProps) {
     setSending(true)
     try {
       await createReport({ targetType, targetId, reason, detail })
-      alert('신고가 접수되었습니다.')
+      toast('신고가 접수되었습니다.', 'success')
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : '신고에 실패했습니다.')

@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
+import { useFeedback } from '../../lib/feedback'
 
 const CONFIRM_WORD = '탈퇴'
 
 function DeleteAccountSection() {
   const { user, deleteAccount } = useAuth()
+  const { toast, confirm } = useFeedback()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [password, setPassword] = useState('')
@@ -28,20 +30,20 @@ function DeleteAccountSection() {
       setError('비밀번호를 입력해주세요.')
       return
     }
-    if (
-      !window.confirm(
-        '정말 탈퇴하시겠습니까?\n작성한 글과 댓글, 변환 파일이 모두 삭제되며 되돌릴 수 없습니다.',
-      )
-    ) {
-      return
-    }
+    const ok = await confirm({
+      title: '정말 탈퇴하시겠습니까?',
+      message: '작성한 글과 댓글, 변환 파일이 모두 삭제되며 되돌릴 수 없습니다.',
+      confirmLabel: '탈퇴하기',
+      danger: true,
+    })
+    if (!ok) return
 
     setDeleting(true)
     const result = await deleteAccount(needsPassword ? password : null)
     setDeleting(false)
 
     if (result.ok) {
-      alert('탈퇴가 완료되었습니다.')
+      toast('탈퇴가 완료되었습니다.', 'success')
       navigate('/')
     } else {
       setError(result.error ?? '회원 탈퇴에 실패했습니다.')

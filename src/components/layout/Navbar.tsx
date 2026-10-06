@@ -1,30 +1,33 @@
 import type { MouseEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import BridgeOnLogo from '../../assets/BridgeOnLogo.png'
 import NotificationBell from './NotificationBell'
+import DisplaySettingsMenu from './DisplaySettingsMenu'
 import { useAuth } from '../../lib/auth'
 
-type NavbarProps = {
-  menuItems: string[]
-}
+// 메뉴 이름과 이동할 경로. 모든 화면이 같은 메뉴를 쓴다.
+const MENU_ITEMS: Array<{ label: string; path: string }> = [
+  { label: '파일 변환', path: '/' },
+  { label: '커뮤니티', path: '/community' },
+  { label: '채용공고', path: '/jobs' },
+  { label: '마이페이지', path: '/mypage' },
+]
+const ADMIN_MENU_ITEM = { label: '관리자', path: '/admin' }
 
-// 메뉴 이름과 이동할 경로
-const MENU_PATHS: Record<string, string> = {
-  '파일 변환': '/',
-  '커뮤니티': '/community',
-  '마이페이지': '/mypage',
-  '관리자': '/admin',
-}
-
-function Navbar({ menuItems }: NavbarProps) {
+function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+
+  // 지금 보고 있는 메뉴. 그 메뉴 자체면 'page', 하위 화면(글 상세 등)이면 'true'로 알린다.
+  const currentOf = (path: string): 'page' | 'true' | undefined => {
+    if (pathname === path) return 'page'
+    if (path !== '/' && pathname.startsWith(`${path}/`)) return 'true'
+    return undefined
+  }
 
   // 관리자에게는 어느 화면에서든 관리자 메뉴를 붙여준다.
-  const visibleMenuItems =
-    user?.role === 'admin' && !menuItems.includes('관리자')
-      ? [...menuItems, '관리자']
-      : menuItems
+  const visibleMenuItems = user?.role === 'admin' ? [...MENU_ITEMS, ADMIN_MENU_ITEM] : MENU_ITEMS
 
   const handleLogout = () => {
     logout()
@@ -54,14 +57,21 @@ function Navbar({ menuItems }: NavbarProps) {
         </div>
 
         <ul className="navbar-menu-list">
-          {visibleMenuItems.map((item) => (
-            <li key={item} className="navbar-menu-item">
-              <Link to={MENU_PATHS[item]} className="navbar-menu-button" aria-label={`${item} 페이지로 이동`}>
-                {item}
+          {visibleMenuItems.map(({ label, path }) => (
+            <li key={label} className="navbar-menu-item">
+              <Link
+                to={path}
+                className="navbar-menu-button"
+                aria-label={`${label} 페이지로 이동`}
+                aria-current={currentOf(path)}
+              >
+                {label}
               </Link>
             </li>
           ))}
         </ul>
+
+        <DisplaySettingsMenu />
 
         <div className="navbar-action-area">
           {user ? (

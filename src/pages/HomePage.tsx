@@ -1,27 +1,27 @@
+import { DownloadSimpleIcon, ScanIcon, UploadSimpleIcon, type Icon } from '@phosphor-icons/react'
 import Navbar from '../components/layout/Navbar'
-import FeatureCard from '../components/home/FeatureCard'
 import HeroSection from '../components/home/HeroSection'
 import UploadSection from '../components/home/UploadSection'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 import '../styles/navbar.css'
 import '../styles/home.css'
-import '../styles/feature-card.css'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
 
-const featureItems = [
+// 백엔드가 실제로 거치는 단계. (추출 → 글자 인식·그림 설명 → 문서 생성)
+const CONVERSION_STEPS: Array<{ icon: Icon; title: string; description: string }> = [
   {
-    icon: '⤴',
-    title: '빠른 업로드',
-    description: '드래그 앤 드롭으로 간편하게 파일을 업로드하세요.',
+    icon: UploadSimpleIcon,
+    title: '파일 올리기',
+    description: 'PDF나 PPTX 강의자료를 올려요. 최대 100MB까지 돼요.',
   },
   {
-    icon: '📄',
-    title: '다양한 형식 지원',
-    description: 'PDF, 이미지, 문서 등 다양한 형식을 지원합니다.',
+    icon: ScanIcon,
+    title: '글자 인식과 그림·표 설명',
+    description: '페이지의 글자를 읽고, 그림과 표는 AI가 글로 풀어 설명해요.',
   },
   {
-    icon: '⬇',
-    title: '즉시 다운로드',
-    description: '변환 완료 후 바로 다운로드할 수 있습니다.',
+    icon: DownloadSimpleIcon,
+    title: 'DOCX·TXT 받기',
+    description: '스크린리더로 읽거나 점역에 바로 쓸 수 있는 파일로 받아요.',
   },
 ]
 
@@ -29,30 +29,38 @@ function HomePage() {
   useDocumentTitle('파일 변환')
   return (
     <div className="homepage-wrapper">
-      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+      <Navbar />
 
+      {/* 변환 도구가 주인공: 가운데 한 줄로 소개 → 업로드 상자 → 변환 과정.
+          화면 크기와 상관없이 같은 순서라 보이는 순서 = 읽는 순서다. */}
       <main className="page-container home-main-content">
         <HeroSection
-          title="간편한 파일 변환 서비스"
-          description="다양한 형식의 파일을 빠르고 안전하게 변환하세요"
+          title="강의자료를 누구나 읽을 수 있는 문서로"
+          description="PDF·PPTX를 올리면 그림과 표를 글로 설명한 DOCX·TXT 파일로 바꿔 드려요."
         />
 
-        <UploadSection />
+        <div className="home-upload-area">
+          <UploadSection />
+        </div>
 
-        <section className="feature-section" aria-labelledby="feature-section-title">
-          <h2 id="feature-section-title" className="sr-only">
-            주요 기능
+        <section className="home-steps" aria-labelledby="home-steps-title">
+          <h2 id="home-steps-title" className="home-steps-title">
+            변환 과정
           </h2>
-          <div className="feature-grid-container">
-            {featureItems.map((featureItem) => (
-              <FeatureCard
-                key={featureItem.title}
-                icon={featureItem.icon}
-                title={featureItem.title}
-                description={featureItem.description}
-              />
+          {/* list-style을 없애면 Safari VoiceOver가 목록으로 읽지 않아서 role="list"를 다시 준다 */}
+          <ol className="home-steps-list" role="list">
+            {CONVERSION_STEPS.map(({ icon: StepIcon, title, description }) => (
+              <li key={title} className="home-step">
+                <span className="home-step-icon" aria-hidden="true">
+                  <StepIcon size={22} />
+                </span>
+                <span className="home-step-text">
+                  <span className="home-step-title">{title}</span>
+                  <span className="home-step-description">{description}</span>
+                </span>
+              </li>
             ))}
-          </div>
+          </ol>
         </section>
       </main>
     </div>

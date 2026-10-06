@@ -34,3 +34,25 @@ export function formatDateTime(iso: string | null | undefined): string {
   const date = parse(iso)
   return date ? DATE_TIME_FORMAT.format(date).replace(',', '') : ''
 }
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
+
+// "2026-10-06" → "10월 6일(화)". 올해가 아니면 연도를 붙인다.
+// "2026-10-06"을 스크린리더가 '이천이십육 다시 십…'처럼 읽는 것을 피하려고 우리말 날짜로 쓴다.
+export function formatKoreanDay(ymd: string | null | undefined): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd ?? '')
+  if (!match) return ''
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])]
+  // 시간대 영향을 받지 않도록 그 날짜 자체로 요일을 구한다.
+  const weekday = WEEKDAYS[new Date(year, month - 1, day).getDay()]
+  const yearPart = year === new Date().getFullYear() ? '' : `${year}년 `
+  return `${yearPart}${month}월 ${day}일(${weekday})`
+}
+
+// "2026-10-05 17:21" → "10월 5일 17:21"
+export function formatKoreanDayTime(ymdHm: string | null | undefined): string {
+  const [ymd, hm] = (ymdHm ?? '').split(' ')
+  const day = formatKoreanDay(ymd)
+  if (!day) return ''
+  return hm ? `${day.replace(/\(.\)$/, '')} ${hm}` : day
+}

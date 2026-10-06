@@ -41,7 +41,7 @@ function AdminPage() {
   if (!user || user.role !== 'admin') {
     return (
       <div className="admin-page">
-        <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지']} />
+        <Navbar />
 
         <main className="page-container admin-main">
           <h1 className="admin-title">관리자</h1>
@@ -61,7 +61,7 @@ function AdminPage() {
 
   return (
     <div className="admin-page">
-      <Navbar menuItems={['파일 변환', '커뮤니티', '마이페이지', '관리자']} />
+      <Navbar />
 
       <main className="page-container admin-main">
         <h1 className="admin-title">관리자</h1>

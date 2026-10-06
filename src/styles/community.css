@@ -1,6 +1,6 @@
 .community-page {
   min-height: 100vh;
-  background-color: #f3f4f6;
+  background-color: var(--page-bg);
 }
 
 .community-main {
@@ -10,44 +10,17 @@
 /* 마이페이지 제목과 같은 크기·간격 */
 .community-title {
   margin: 0 0 1.5rem;
-  color: #111827;
-  font-size: 1.8rem;
-  font-weight: 800;
+  color: var(--text-strong);
+  font-size: var(--text-xl);
+  font-weight: 700;
 }
 
 .community-filter-card {
   background-color: #ffffff;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
-}
-
-.community-category-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.community-category-tab {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 20px;
-  border: 1px solid #e5e7eb;
-  background-color: #ffffff;
-  color: #374151;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.community-category-tab.active {
-  background-color: #2563eb;
-  color: #ffffff;
-  border-color: #2563eb;
+  border: 1px solid var(--border-color);
 }
 
 .community-search-row {
@@ -67,8 +40,7 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
-  font-size: 1.1rem;
+  color: var(--text-muted);
   pointer-events: none;
 }
 
@@ -76,14 +48,14 @@
   width: 100%;
   min-height: 44px;
   padding: 0 12px 0 40px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  font-size: 1.1rem;
-  color: #111827;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  font-size: var(--text-md);
+  color: var(--text-strong);
 }
 
 .community-search-input::placeholder {
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .community-search-input:focus {
@@ -91,15 +63,15 @@
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
 }
 
-.community-sort-select {
+.community-category-select {
   min-width: 110px;
   min-height: 44px;
   padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
   background-color: #ffffff;
-  font-size: 1.1rem;
-  color: #374151;
+  font-size: var(--text-md);
+  color: var(--text-body);
 }
 
 .community-write-button {
@@ -108,51 +80,52 @@
   gap: 6px;
   min-height: 44px;
   padding: 0 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: none;
-  background-image: linear-gradient(135deg, #7c3aed, #2563eb);
+  background-color: #2563eb;
   color: #ffffff;
-  font-size: 1.1rem;
-  font-weight: 500;
+  font-size: var(--text-md);
+  font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+  transition: background-color 0.15s ease;
 }
 
+.community-write-button:hover {
+  background-color: #1d4ed8;
+}
+
+/* 글마다 상자를 두르지 않고, 흰 상자 하나 안에서 줄 사이 구분선으로 나눈다 (한 화면에 더 많이 훑기) */
 .community-post-list {
   margin-top: 16px;
   margin-bottom: 20px;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
-.community-empty-state {
-  padding: 40px 0;
-  text-align: center;
-  /* 바탕이 흰색이 아니라서 한 단계 더 진하게 (대비 4.5:1 이상) */
-  color: #4b5563;
-  font-size: 1.15rem;
+.community-post-list:has(.skeleton-list) {
+  background-color: transparent;
+  border: none;
 }
 
 .post-card {
-  /* 제목 링크의 누르는 영역을 카드 전체로 넓히는 기준 */
+  /* 제목 링크의 누르는 영역을 줄 전체로 넓히는 기준 */
   position: relative;
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 24px;
+  padding: 14px 20px 6px;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03);
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+  transition: background-color 0.12s ease;
 }
 
 .post-card + .post-card {
-  margin-top: 12px;
+  border-top: 1px solid var(--border-color);
 }
 
-/* 키보드로 제목에 왔을 때도 마우스를 올렸을 때처럼 카드가 떠오른다. */
+/* 마우스를 올리거나 키보드로 제목에 오면 바탕이 바뀐다 */
 .post-card:hover,
 .post-card:has(.post-card-link:focus-visible) {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
-  background-color: #f9fafb;
+  background-color: #f8fbff;
 }
 
 .post-card-link {
@@ -160,66 +133,49 @@
   text-decoration: none;
 }
 
-/* 카드 어디를 눌러도 글이 열리도록 제목 링크의 누르는 영역을 카드 전체로 넓힌다. */
 .post-card-link::after {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 12px;
 }
 
-.post-card-top {
+.post-card-head {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
 }
 
 .post-card-category-badge {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 4px 17px;
-  border-radius: 999px;
-  font-size: 0.98rem;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  background-color: #f3f4f6;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
-.post-card-category-badge.question {
-  background-color: #eff6ff;
-  color: #1d4ed8;
-}
-
-.post-card-category-badge.tip {
-  background-color: #f0fdf4;
-  color: #15803d;
-}
-
 .post-card-category-badge.notice {
-  background-color: #fef2f2;
-  color: #b91c1c;
-}
-
-.post-card-category-badge.review {
-  background-color: #f5f3ff;
-  color: #6d28d9;
-}
-
-
-.post-card-middle {
-  margin-bottom: 12px;
+  background-color: var(--accent);
+  color: #ffffff;
 }
 
 .post-card-title {
-  font-size: 1.3rem;
+  margin: 0;
+  min-width: 0;
+  font-size: var(--text-md);
   font-weight: 700;
-  color: #111827;
-  margin-bottom: 4px;
+  color: var(--text-strong);
 }
 
 .post-card-preview {
-  font-size: 1.1rem;
-  color: #6b7280;
+  margin: 4px 0 0;
+  font-size: var(--text-base);
+  color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -230,8 +186,8 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  font-size: 1.05rem;
-  color: #6b7280;
+  font-size: var(--text-base);
+  color: var(--text-muted);
 }
 
 .post-card-stats {
@@ -247,18 +203,19 @@
   z-index: 1;
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   min-height: 44px;
   border: none;
   background-color: transparent;
-  color: #6b7280;
-  font-size: 1.05rem;
+  color: var(--text-muted);
+  font-size: var(--text-base);
   cursor: pointer;
   padding: 0 4px;
 }
 
 /* 내가 이미 좋아요를 누른 상태 */
 .post-card-like-button.liked {
-  color: #2563eb;
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -274,11 +231,11 @@
   min-width: 44px;
   min-height: 44px;
   padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
   background-color: #ffffff;
-  font-size: 1.05rem;
-  color: #374151;
+  font-size: var(--text-base);
+  color: var(--text-body);
   cursor: pointer;
   transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
@@ -300,12 +257,19 @@
   }
 
   .post-card {
-    padding: 18px;
+    padding: 12px 16px 4px;
   }
 
   .post-card-bottom {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0 12px;
   }
 }
 
+
+.community-empty-state {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+}

@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
 import { BACKEND_ORIGIN, deleteFile, getRecentFiles } from '../../api/fileApi'
 import { formatDate } from '../../lib/formatDate'
+import { useFeedback } from '../../lib/feedback'
 import type { BackendFileListItemResponse, BackendFileStatus } from '../../types/fileConverter'
+import { SkeletonList } from '../common/Skeleton'
+import { Link } from 'react-router-dom'
+import EmptyState from '../common/EmptyState'
+import { FileTextIcon } from '@phosphor-icons/react'
 
 const STATUS_LABEL: Record<BackendFileStatus, string> = {
   queued: '대기 중',
@@ -18,6 +23,7 @@ function toAbsolute(url: string): string {
 }
 
 function MyFilesSection() {
+  const { toast, confirm } = useFeedback()
   const [files, setFiles] = useState<BackendFileListItemResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -46,13 +52,20 @@ function MyFilesSection() {
   }, [])
 
   const handleDelete = async (fileId: string, name: string) => {
-    if (!window.confirm(`'${name}'을(를) 삭제할까요?`)) return
+    const ok = await confirm({
+      title: `'${name}'을(를) 삭제할까요?`,
+      message: '변환 결과 파일도 함께 지워집니다.',
+      confirmLabel: '삭제',
+      danger: true,
+    })
+    if (!ok) return
 
     try {
       await deleteFile(fileId)
       setFiles((prev) => prev.filter((item) => item.file_id !== fileId))
+      toast(`'${name}'을(를) 삭제했습니다.`, 'success')
     } catch (err) {
-      alert(err instanceof Error ? err.message : '삭제에 실패했습니다.')
+      toast(err instanceof Error ? err.message : '삭제에 실패했습니다.', 'error')
     }
   }
 
@@ -62,11 +75,20 @@ function MyFilesSection() {
       <p className="mypage-section-hint">보관 기간이 지난 파일은 표시되지 않습니다.</p>
 
       {loading ? (
-        <p className="mypage-list-empty">불러오는 중...</p>
+        <SkeletonList count={2} lines={2} label="변환 파일을 불러오는 중" />
       ) : error ? (
         <p className="mypage-list-empty">{error}</p>
       ) : files.length === 0 ? (
-        <p className="mypage-list-empty">변환한 파일이 없습니다.</p>
+        <EmptyState
+          icon={<FileTextIcon size={28} />}
+          title="변환한 파일이 없어요"
+          description="PDF나 PPTX를 올리면 읽을 수 있는 문서로 바꿔 드려요."
+          action={
+            <Link to="/" className="empty-state-button">
+              파일 변환하기
+            </Link>
+          }
+        />
       ) : (
         <ul className="mypage-list">
           {files.map((file) => (
