@@ -339,9 +339,10 @@
   align-items: center;
 }
 
-/* 고른 파일은 아래 칩이 테두리를 맡는다. (점선 상자 안에 칩 상자가 겹치지 않게) */
+/* 파일 카드와 '변환 시작' 버튼이 같은 폭의 한 열을 이룬다 */
 .upload-panel-selected {
-  width: min(100%, 820px);
+  width: min(100%, 480px);
+  gap: 12px;
 }
 
 .upload-icon-circle {
@@ -374,42 +375,81 @@
   font-size: var(--text-base);
 }
 
-/* 고른 파일: 아이콘 + 이름 + 형식·크기를 한 덩어리로 보여준다 */
-.selected-file-chip {
+/* 고른 파일 카드: 아이콘 + 이름 + 형식·크기, 오른쪽에 '다른 파일 선택' */
+.selected-file-card {
+  width: 100%;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  max-width: 100%;
-  margin-bottom: 1.25rem;
-  padding: 12px 16px;
+  gap: 12px 14px;
+  padding: 16px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  background-color: var(--page-bg);
+  background-color: #ffffff;
   text-align: left;
 }
 
-.selected-file-chip-icon {
+.selected-file-card-icon {
   flex-shrink: 0;
   display: inline-flex;
   color: var(--accent);
 }
 
-.selected-file-chip-text {
+.selected-file-card-text {
+  flex: 1 1 160px;
   display: flex;
   flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
+/* 긴 이름은 두 줄까지만 보이고 말줄임. 스크린리더는 전체 이름을 읽는다. */
 .selected-file-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   color: var(--text-strong);
   font-size: var(--text-md);
   font-weight: 700;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 
 .selected-file-size {
   color: var(--text-secondary);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
+}
+
+.selected-file-change-button {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.selected-file-change-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.selected-file-change-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.convert-start-button.convert-start-button-large {
+  width: 100%;
+  min-height: 52px;
+  font-size: var(--text-md);
 }
 
 .selected-action-row {
@@ -444,17 +484,6 @@
 
 .upload-select-button:hover {
   background-color: #1d4ed8;
-  border-color: #1d4ed8;
-}
-
-/* 파일을 고른 뒤에는 '변환 시작'만 주된 버튼이다. '다시 선택'은 보조 버튼으로 낮춘다. */
-.upload-panel-selected .upload-select-button {
-  background-color: #ffffff;
-  color: var(--accent-strong);
-}
-
-.upload-panel-selected .upload-select-button:hover {
-  background-color: #eff6ff;
   border-color: #1d4ed8;
 }
 
@@ -624,8 +653,13 @@
   font-size: var(--text-sm);
 }
 
+/* 미리보기(원본 | 결과 두 칸)가 들어가서 넓게 쓴다. 버튼 줄은 원래 폭을 유지한다. */
 .upload-panel-result {
-  width: min(100%, 620px);
+  width: min(100%, 840px);
+}
+
+.upload-panel-result .selected-action-row {
+  max-width: 620px;
 }
 
 .result-icon {
@@ -850,4 +884,204 @@
   border-color: var(--accent);
   background-color: var(--accent);
   color: #ffffff;
+}
+
+/* 완료 화면 미리보기: 한 번에 한 페이지, 원본과 결과를 나란히 */
+.file-preview {
+  width: 100%;
+  margin: 0.5rem 0 1.5rem;
+  text-align: left;
+}
+
+.file-preview-title {
+  margin: 0 0 0.75rem;
+  color: var(--text-strong);
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+
+.file-preview-title-sub {
+  margin-left: 6px;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.file-preview-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.file-preview-tab {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background-color: #ffffff;
+  color: var(--text-body);
+  font-size: var(--text-base);
+  cursor: pointer;
+}
+
+.file-preview-tab[aria-selected='true'] {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.file-preview-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--page-bg);
+}
+
+@media (min-width: 768px) {
+  .file-preview-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.file-preview-label {
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.file-preview-image {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+}
+
+.file-preview-zoom-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text-strong);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.file-preview-zoom-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 결과 칸: 실제 TXT처럼 읽히되, 제목·목록·구간 표시를 모양으로 구분한다 */
+.file-preview-result {
+  /* 안에서 따로 스크롤되는 상자는 키보드·스크린리더로 다루기 어려워서 높이를 묶지 않는다 */
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text-body);
+  font-size: var(--text-base);
+  line-height: 1.7;
+}
+
+.file-preview-result p {
+  margin: 0 0 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.file-preview-result .file-preview-label {
+  white-space: normal;
+}
+
+.file-preview-heading {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+.file-preview-list.level-0 { padding-left: 0.5rem; }
+.file-preview-list.level-1 { padding-left: 1.5rem; }
+.file-preview-list.level-2 { padding-left: 2.5rem; }
+.file-preview-list.level-3 { padding-left: 3.5rem; }
+
+.file-preview-boundary {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.file-preview-message {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+}
+
+/* 원본 크게 보기 팝업 */
+.file-preview-dialog {
+  width: min(92vw, 960px);
+  max-height: 92vh;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+}
+
+.file-preview-dialog::backdrop {
+  background-color: rgba(17, 24, 39, 0.6);
+}
+
+.file-preview-dialog-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 10px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: #ffffff;
+}
+
+.file-preview-dialog-title {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+
+.file-preview-dialog-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text-strong);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.file-preview-dialog-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 16px;
 }

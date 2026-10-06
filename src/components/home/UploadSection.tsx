@@ -31,6 +31,7 @@ import type {
 } from '../../types/fileConverter'
 import { SkeletonList } from '../common/Skeleton'
 import EmptyState from '../common/EmptyState'
+import FilePreview from './FilePreview'
 
 type ConversionStatus = 'idle' | 'file_selected' | 'converting' | 'success' | 'error'
 
@@ -889,41 +890,45 @@ function UploadSection() {
 
         {conversionState.status === 'file_selected' && (
           <div className="upload-panel-group upload-panel-selected">
-            <div className="selected-file-chip">
-              <span className="selected-file-chip-icon" aria-hidden="true">
+            {/* 고른 파일이 주인공: 큰 파일 카드 + 그 안의 '다른 파일 선택', 아래에 같은 폭의 주 버튼 하나 */}
+            <div className="selected-file-card">
+              <span className="selected-file-card-icon" aria-hidden="true">
                 {extensionOf(conversionState.fileName) === 'pdf' ? (
-                  <FilePdfIcon size={28} />
+                  <FilePdfIcon size={48} />
                 ) : extensionOf(conversionState.fileName) === 'pptx' ? (
-                  <FilePptIcon size={28} />
+                  <FilePptIcon size={48} />
                 ) : (
-                  <FileTextIcon size={28} />
+                  <FileTextIcon size={48} />
                 )}
               </span>
-              <span className="selected-file-chip-text">
+              <span className="selected-file-card-text">
                 <span className="selected-file-name">{conversionState.fileName}</span>
                 <span className="selected-file-size">
                   {extensionOf(conversionState.fileName).toUpperCase()}{' '}
                   {formatFileSize(conversionState.fileSize)}
                 </span>
               </span>
-            </div>
-
-            <div className="selected-action-row">
-              <button type="button" className="upload-select-button" onClick={handleSelectButtonClick}>
-                파일 다시 선택
-              </button>
               <button
                 type="button"
-                className="convert-start-button"
-                onClick={() => {
-                  void handleStartConversion()
-                }}
-                aria-label="변환 시작"
+                className="selected-file-change-button"
+                onClick={handleSelectButtonClick}
                 disabled={conversionState.isSubmitting}
               >
-                {conversionState.isSubmitting ? '업로드 중...' : '변환 시작'}
+                다른 파일 선택
               </button>
             </div>
+
+            {/* 글자가 '업로드 중...'으로 바뀌면 스크린리더도 그대로 읽도록 aria-label을 따로 두지 않는다 */}
+            <button
+              type="button"
+              className="convert-start-button convert-start-button-large"
+              onClick={() => {
+                void handleStartConversion()
+              }}
+              disabled={conversionState.isSubmitting}
+            >
+              {conversionState.isSubmitting ? '업로드 중...' : '변환 시작'}
+            </button>
           </div>
         )}
 
@@ -1028,6 +1033,8 @@ function UploadSection() {
                 </ul>
               </div>
             )}
+
+            {conversionState.fileId && <FilePreview fileId={conversionState.fileId} />}
 
             <div className="selected-action-row">
               <button

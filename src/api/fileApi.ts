@@ -2,6 +2,7 @@ import type {
   BackendFileListItemResponse,
   BackendFileProcessResponse,
   BackendFileStatusResponse,
+  BackendPreviewResponse,
 } from '../types/fileConverter'
 
 // 백엔드 주소는 front/.env 의 VITE_BACKEND_ORIGIN 으로 설정 (미설정 시 localhost:8000)
@@ -114,4 +115,26 @@ export async function cancelFile(fileId: string): Promise<CancelResult> {
   }
 
   return (await response.json()) as CancelResult
+}
+
+// 완료 화면 미리보기. 이미지 주소는 백엔드 기준 경로라서 BACKEND_ORIGIN을 붙여 돌려준다.
+export async function getFilePreview(fileId: string): Promise<BackendPreviewResponse> {
+  const response = await fetch(`${API_BASE}/${encodeURIComponent(fileId)}/preview`, {
+    method: 'GET',
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    const errorMessage = await parseErrorResponse(response)
+    throw new Error(errorMessage)
+  }
+
+  const data = (await response.json()) as BackendPreviewResponse
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      image_url: page.image_url ? `${BACKEND_ORIGIN}${page.image_url}` : null,
+    })),
+  }
 }
