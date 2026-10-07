@@ -5,9 +5,11 @@ import type {
   BackendPreviewResponse,
 } from '../types/fileConverter'
 
-// 백엔드 주소는 front/.env 의 VITE_BACKEND_ORIGIN 으로 설정 (미설정 시 localhost:8000)
+// 백엔드 주소는 front/.env 의 VITE_BACKEND_ORIGIN 으로 설정
+// 미설정 시 개발 서버에서만 localhost:8000. 배포 빌드는 vite.config.ts가 미설정을 막는다.
+// 빈 문자열이면 같은 도메인(/api/v1/...)으로 요청한다.
 export const BACKEND_ORIGIN: string =
-  import.meta.env.VITE_BACKEND_ORIGIN ?? 'http://localhost:8000'
+  import.meta.env.VITE_BACKEND_ORIGIN ?? (import.meta.env.DEV ? 'http://localhost:8000' : '')
 
 const API_BASE = `${BACKEND_ORIGIN}/api/v1/files`
 
