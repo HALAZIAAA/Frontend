@@ -9,31 +9,37 @@ import EmptyState from '../common/EmptyState'
 import { NotePencilIcon } from '@phosphor-icons/react'
 
 function MyPostsSection() {
-  const [posts, setPosts] = useState<PostSummary[]>([])
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  // 응답과 그 응답을 요청한 페이지를 함께 둔다. 지금 페이지와 다르면 아직 불러오는 중이다.
+  const [loaded, setLoaded] = useState<{
+    page: number
+    posts: PostSummary[]
+    totalPages: number
+    error: string
+  } | null>(null)
+  const loading = loaded?.page !== page
+  const posts = loaded?.posts ?? []
+  const totalPages = loaded?.totalPages ?? 1
+  const error = loaded?.error ?? ''
 
   useEffect(() => {
+    // 페이지가 바뀌거나 화면을 떠나면 늦게 도착한 이전 응답은 버린다.
     let cancelled = false
-    setLoading(true)
 
     getPosts({ author: 'me', page })
       .then((result) => {
         if (cancelled) return
-        setPosts(result.posts)
-        setTotalPages(result.totalPages)
+        setLoaded({ page, posts: result.posts, totalPages: result.totalPages, error: '' })
         setPage(result.currentPage)
-        setError('')
       })
       .catch((err) => {
         if (cancelled) return
-        setPosts([])
-        setError(err instanceof Error ? err.message : '글을 불러오지 못했습니다.')
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
+        setLoaded({
+          page,
+          posts: [],
+          totalPages: 1,
+          error: err instanceof Error ? err.message : '글을 불러오지 못했습니다.',
+        })
       })
 
     return () => {
