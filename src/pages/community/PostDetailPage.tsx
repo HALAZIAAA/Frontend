@@ -36,8 +36,14 @@ function PostDetailPage() {
   const { toast, confirm } = useFeedback()
 
   const numericId = Number(id)
-  const [post, setPost] = useState<PostDetail | null>(null)
-  const [loading, setLoading] = useState(true)
+  // /community/abc 처럼 숫자가 아닌 주소는 요청하지 않고 바로 "없는 글"로 보여 준다.
+  // (NaN !== NaN 이라 키 비교만 하면 영원히 로딩 상태에 머문다)
+  const isValidId = Number.isInteger(numericId) && numericId > 0
+  // 응답과 그 응답을 요청한 글 번호를 함께 둔다. 지금 번호와 다르면 아직 불러오는 중이다.
+  const [loaded, setLoaded] = useState<{ id: number; post: PostDetail | null } | null>(null)
+  const loading = isValidId && loaded?.id !== numericId
+  const post = isValidId ? (loaded?.post ?? null) : null
+  const setPost = (next: PostDetail | null) => setLoaded({ id: numericId, post: next })
   const [newComment, setNewComment] = useState('')
   const [replyTargetId, setReplyTargetId] = useState<number | null>(null)
   const [replyContent, setReplyContent] = useState('')
@@ -51,24 +57,22 @@ function PostDetailPage() {
   useDocumentTitle(loading ? '불러오는 중' : post ? post.title : '존재하지 않는 게시글')
 
   useEffect(() => {
+    if (!isValidId) return
+    // 다른 글로 이동하거나 화면을 떠나면 늦게 도착한 이전 응답은 버린다.
     let cancelled = false
-    setLoading(true)
 
     getPost(numericId)
       .then((detail) => {
-        if (!cancelled) setPost(detail)
+        if (!cancelled) setLoaded({ id: numericId, post: detail })
       })
       .catch(() => {
-        if (!cancelled) setPost(null)
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoaded({ id: numericId, post: null })
       })
 
     return () => {
       cancelled = true
     }
-  }, [numericId])
+  }, [numericId, isValidId])
 
   const topLevelComments = useMemo(
     () => (post ? post.comments.filter((comment) => comment.parentId === null) : []),

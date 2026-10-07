@@ -23,10 +23,18 @@ function CommunityPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [keyword, setKeyword] = useState('')
   const [searchKeyword, setSearchKeyword] = useState('') // 타이핑이 멈춘 뒤의 검색어
-  const [posts, setPosts] = useState<PostSummary[]>([])
-  const [totalPages, setTotalPages] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  // 응답과 그 응답을 요청한 조건(필터·페이지·검색어)을 함께 둔다. 지금 조건과 다르면 아직 불러오는 중이다.
+  const requestKey = JSON.stringify([selectedCategory, currentPage, searchKeyword])
+  const [loaded, setLoaded] = useState<{
+    key: string
+    posts: PostSummary[]
+    totalPages: number
+    error: string
+  } | null>(null)
+  const loading = loaded?.key !== requestKey
+  const posts = loaded?.posts ?? []
+  const totalPages = loaded?.totalPages ?? 1
+  const error = loaded?.error ?? ''
 
   // 글자를 칠 때마다 요청하지 않도록 0.3초 기다렸다가 검색어를 넘긴다.
   useEffect(() => {
@@ -38,8 +46,9 @@ function CommunityPage() {
   }, [keyword])
 
   useEffect(() => {
+    // 조건이 바뀌거나 화면을 떠나면 늦게 도착한 이전 응답은 버린다.
     let cancelled = false
-    setLoading(true)
+    const key = JSON.stringify([selectedCategory, currentPage, searchKeyword])
 
     getPosts({
       category: selectedCategory,
@@ -48,18 +57,17 @@ function CommunityPage() {
     })
       .then((result) => {
         if (cancelled) return
-        setPosts(result.posts)
-        setTotalPages(result.totalPages)
+        setLoaded({ key, posts: result.posts, totalPages: result.totalPages, error: '' })
         setCurrentPage(result.currentPage)
-        setError('')
       })
       .catch((err) => {
         if (cancelled) return
-        setPosts([])
-        setError(err instanceof Error ? err.message : '게시글을 불러오지 못했습니다.')
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
+        setLoaded({
+          key,
+          posts: [],
+          totalPages: 1,
+          error: err instanceof Error ? err.message : '게시글을 불러오지 못했습니다.',
+        })
       })
 
     return () => {

@@ -3,7 +3,18 @@ import { useAuth } from '../../lib/auth'
 
 declare global {
   interface Window {
-    google?: any
+    // GIS 스크립트가 로드되기 전에는 없으므로 optional. 실제로 쓰는 두 함수만 적는다.
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: {
+            client_id: string
+            callback: (resp: { credential: string }) => void
+          }) => void
+          renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void
+        }
+      }
+    }
   }
 }
 
@@ -15,6 +26,11 @@ type GoogleLoginButtonProps = {
 function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps) {
   const divRef = useRef<HTMLDivElement>(null)
   const { loginWithGoogle } = useAuth()
+  // 버튼은 한 번만 초기화하므로, GIS 콜백이 늘 최신 함수를 부르도록 ref에 담아 둔다.
+  const latestRef = useRef({ loginWithGoogle, onSuccess, onError })
+  useEffect(() => {
+    latestRef.current = { loginWithGoogle, onSuccess, onError }
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -29,6 +45,7 @@ function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps) {
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         callback: async (resp: { credential: string }) => {
+          const { loginWithGoogle, onSuccess, onError } = latestRef.current
           const result = await loginWithGoogle(resp.credential)
           if (result.ok) {
             onSuccess()
