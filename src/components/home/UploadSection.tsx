@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  ArrowRightIcon,
+  BrowserIcon,
   CheckIcon,
+  ClockIcon,
   FilePdfIcon,
   FilePptIcon,
   FileTextIcon,
+  LockSimpleIcon,
   TrashIcon,
   UploadSimpleIcon,
   XIcon,
@@ -855,7 +859,9 @@ function UploadSection() {
       </p>
 
       <div
-        className={`upload-box${canDrop ? ' is-drop-target' : ''}${isDragOver ? ' is-drag-over' : ''}`}
+        className={`upload-box${conversionState.status === 'idle' ? ' is-drop-target' : ''}${
+          conversionState.status === 'file_selected' ? ' is-selected' : ''
+        }${isDragOver ? ' is-drag-over' : ''}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -890,24 +896,63 @@ function UploadSection() {
 
         {conversionState.status === 'file_selected' && (
           <div className="upload-panel-group upload-panel-selected">
-            {/* 고른 파일이 주인공: 큰 파일 카드 + 그 안의 '다른 파일 선택', 아래에 같은 폭의 주 버튼 하나 */}
-            <div className="selected-file-card">
-              <span className="selected-file-card-icon" aria-hidden="true">
+            {/* 파일을 고르면 업로드 상자가 작업 카드로 바뀐다: 단계 → 파일 → 안내 → 버튼 */}
+            <ol className="selected-steps" role="list" aria-label="변환 단계">
+              <li className="selected-step is-done">
+                <span className="selected-step-marker" aria-hidden="true">
+                  <CheckIcon size={14} weight="bold" />
+                </span>
+                파일 선택<span className="sr-only"> 완료</span>
+              </li>
+              <li className="selected-step is-current" aria-current="step">
+                <span className="selected-step-marker" aria-hidden="true">2</span>
+                변환<span className="sr-only"> 다음 단계</span>
+              </li>
+              <li className="selected-step">
+                <span className="selected-step-marker" aria-hidden="true">3</span>
+                받기
+              </li>
+            </ol>
+
+            <div className="selected-file-main">
+              <span className="selected-file-thumb" aria-hidden="true">
                 {extensionOf(conversionState.fileName) === 'pdf' ? (
-                  <FilePdfIcon size={48} />
+                  <FilePdfIcon size={44} />
                 ) : extensionOf(conversionState.fileName) === 'pptx' ? (
-                  <FilePptIcon size={48} />
+                  <FilePptIcon size={44} />
                 ) : (
-                  <FileTextIcon size={48} />
+                  <FileTextIcon size={44} />
                 )}
               </span>
-              <span className="selected-file-card-text">
-                <span className="selected-file-name">{conversionState.fileName}</span>
-                <span className="selected-file-size">
+
+              <div className="selected-file-body">
+                <p className="selected-file-name">{conversionState.fileName}</p>
+                <p className="selected-file-size">
                   {extensionOf(conversionState.fileName).toUpperCase()}{' '}
                   {formatFileSize(conversionState.fileSize)}
-                </span>
-              </span>
+                </p>
+              </div>
+
+              <ul className="selected-file-notes" role="list">
+                <li>
+                  <ClockIcon aria-hidden="true" size={18} />
+                  그림 수에 따라 보통 몇 분 정도 걸려요
+                </li>
+                <li>
+                  <LockSimpleIcon aria-hidden="true" size={18} />
+                  올린 파일과 결과는 24시간 뒤 자동으로 지워져요
+                </li>
+                {/* 비로그인 파일은 브라우저 쿠키로 주인을 구분해서 다른 기기에서는 볼 수 없다 */}
+                {!user && (
+                  <li>
+                    <BrowserIcon aria-hidden="true" size={18} />
+                    로그인하지 않으면 이 브라우저에서만 결과를 볼 수 있어요
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            <div className="selected-file-actions">
               <button
                 type="button"
                 className="selected-file-change-button"
@@ -916,19 +961,19 @@ function UploadSection() {
               >
                 다른 파일 선택
               </button>
+              {/* 글자가 '업로드 중...'으로 바뀌면 스크린리더도 그대로 읽도록 aria-label을 따로 두지 않는다 */}
+              <button
+                type="button"
+                className="convert-start-button convert-start-button-large"
+                onClick={() => {
+                  void handleStartConversion()
+                }}
+                disabled={conversionState.isSubmitting}
+              >
+                {conversionState.isSubmitting ? '업로드 중...' : '변환 시작'}
+                {!conversionState.isSubmitting && <ArrowRightIcon aria-hidden="true" size={20} />}
+              </button>
             </div>
-
-            {/* 글자가 '업로드 중...'으로 바뀌면 스크린리더도 그대로 읽도록 aria-label을 따로 두지 않는다 */}
-            <button
-              type="button"
-              className="convert-start-button convert-start-button-large"
-              onClick={() => {
-                void handleStartConversion()
-              }}
-              disabled={conversionState.isSubmitting}
-            >
-              {conversionState.isSubmitting ? '업로드 중...' : '변환 시작'}
-            </button>
           </div>
         )}
 
