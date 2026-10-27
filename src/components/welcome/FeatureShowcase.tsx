@@ -129,7 +129,7 @@ function FeatureShowcase() {
   const feature = FEATURES.find((item) => item.id === selected) ?? FEATURES[0]
 
   return (
-    <section id="welcome-features" className="welcome-section" aria-labelledby="welcome-features-title">
+    <section className="welcome-section" aria-labelledby="welcome-features-title">
       <div className="welcome-section-head">
         <h2 id="welcome-features-title" className="welcome-section-title">
           이런 걸 할 수 있어요

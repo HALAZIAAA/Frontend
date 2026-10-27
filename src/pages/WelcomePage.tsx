@@ -26,11 +26,6 @@ function WelcomePage() {
             PPT·PDF 강의자료를 올리면 시각자료 설명문 초안과 점역 지침에 맞춘 DOCX·TXT 초안을 만들어 드려요. 점역가는
             처음부터 쓰지 않고 검수부터 시작할 수 있어요.
           </p>
-          <div className="welcome-hero-actions">
-            <a href="#welcome-features" className="welcome-secondary-button">
-              기능 둘러보기
-            </a>
-          </div>
         </section>
 
         <StorySection />
