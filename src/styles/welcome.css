@@ -48,16 +48,7 @@
   text-wrap: balance;
 }
 
-.welcome-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 1.75rem;
-}
-
-.welcome-primary-button,
-.welcome-secondary-button {
+.welcome-primary-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -81,25 +72,9 @@
   background-color: var(--accent-strong);
 }
 
-.welcome-secondary-button {
-  border-color: var(--border-strong);
-  background-color: #ffffff;
-  color: var(--text-strong);
-}
-
-.welcome-secondary-button:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
 /* ── 공통 섹션 머리 ── */
 .welcome-section {
   min-width: 0;
-}
-
-/* 위에 붙어 있는 메뉴 줄에 제목이 가려지지 않게 */
-#welcome-features {
-  scroll-margin-top: 96px;
 }
 
 .welcome-section-head {
