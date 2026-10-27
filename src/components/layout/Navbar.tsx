@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/auth'
 
 // 메뉴 이름과 이동할 경로. 모든 화면이 같은 메뉴를 쓴다.
 const MENU_ITEMS: Array<{ label: string; path: string }> = [
+  { label: '소개', path: '/welcome' },
   { label: '파일 변환', path: '/' },
   { label: '커뮤니티', path: '/community' },
   { label: '채용공고', path: '/jobs' },

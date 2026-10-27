@@ -1,4 +1,5 @@
 import HomePage from './pages/HomePage'
+import WelcomePage from './pages/WelcomePage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import MyPage from './pages/MyPage'
@@ -17,6 +18,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/welcome" element={<WelcomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

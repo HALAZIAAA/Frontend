@@ -4,6 +4,7 @@ import {
   BrowserIcon,
   CheckIcon,
   ClockIcon,
+  EyeIcon,
   FilePdfIcon,
   FilePptIcon,
   FileTextIcon,
@@ -431,6 +432,15 @@ function UploadSection() {
   const hasHydratedRef = useRef(false)
   const hasLoadedListRef = useRef(false)
   const prevUserIdRef = useRef<number | null | undefined>(undefined)
+  // 목록에서 다시 여는 미리보기. 새 파일을 변환한 뒤에도 지난 결과를 원본과 나란히 볼 수 있다.
+  const [previewItem, setPreviewItem] = useState<BackendFileListItemResponse | null>(null)
+  const previewDialogRef = useRef<HTMLDialogElement | null>(null)
+  const previewTriggerRef = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    const dialog = previewDialogRef.current
+    if (previewItem && dialog && !dialog.open) dialog.showModal()
+  }, [previewItem])
 
   const refreshConvertedFiles = useCallback(async (): Promise<void> => {
     if (!hasLoadedListRef.current) {
@@ -1179,6 +1189,21 @@ function UploadSection() {
                   </div>
 
                   <div className="converted-file-actions">
+                    {statusMeta.variant === 'done' && (
+                      <button
+                        type="button"
+                        className="converted-file-action-button preview-open-button"
+                        aria-label={`${item.original_name} 원본과 변환 결과 미리보기`}
+                        onClick={(event) => {
+                          previewTriggerRef.current = event.currentTarget
+                          setPreviewItem(item)
+                        }}
+                      >
+                        <EyeIcon aria-hidden="true" />
+                        미리보기
+                      </button>
+                    )}
+
                     {statusMeta.variant === 'processing' && (
                       <button
                       type="button"
@@ -1239,6 +1264,64 @@ function UploadSection() {
           </ul>
         )}
       </div>
+
+      {/* 지난 변환 미리보기: 완료 화면과 같은 미리보기(왼쪽 원본, 오른쪽 결과)를 창으로 띄운다.
+          Esc·바깥 누르기로 닫히고, 닫히면 눌렀던 '미리보기' 버튼으로 돌아간다. */}
+      <dialog
+        ref={previewDialogRef}
+        className="file-preview-dialog recent-preview-dialog"
+        aria-labelledby="recent-preview-dialog-title"
+        onClick={(event) => {
+          if (event.target === previewDialogRef.current) previewDialogRef.current?.close()
+        }}
+        onClose={(event) => {
+          // 안쪽 '원본 크게 보기' 창이 닫힐 때도 React가 이 핸들러를 부르므로 이 창일 때만 처리한다.
+          if (event.target !== previewDialogRef.current) return
+          setPreviewItem(null)
+          previewTriggerRef.current?.focus()
+        }}
+      >
+        {previewItem && (
+          <>
+            <div className="file-preview-dialog-head">
+              <h3 id="recent-preview-dialog-title" className="file-preview-dialog-title recent-preview-dialog-title">
+                {previewItem.original_name}
+              </h3>
+              <button type="button" className="file-preview-dialog-close" onClick={() => previewDialogRef.current?.close()}>
+                <XIcon aria-hidden="true" size={20} />
+                닫기
+              </button>
+            </div>
+
+            <div className="recent-preview-body">
+              <FilePreview fileId={previewItem.file_id} />
+
+              <div className="selected-action-row">
+                <button
+                  type="button"
+                  className="convert-start-button"
+                  disabled={!canDownloadFormat(previewItem, 'docx')}
+                  onClick={() => {
+                    void handleListItemDownload(previewItem, 'docx')
+                  }}
+                >
+                  DOCX 다운로드
+                </button>
+                <button
+                  type="button"
+                  className="convert-start-button"
+                  disabled={!canDownloadFormat(previewItem, 'txt')}
+                  onClick={() => {
+                    void handleListItemDownload(previewItem, 'txt')
+                  }}
+                >
+                  TXT 다운로드
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </dialog>
     </section>
   )
 }

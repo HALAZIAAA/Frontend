@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { MagnifyingGlassPlusIcon, XIcon } from '@phosphor-icons/react'
 import { getFilePreview } from '../../api/fileApi'
 import { useTabs } from '../../lib/useTabs'
@@ -21,6 +21,8 @@ function FilePreview({ fileId }: FilePreviewProps) {
   const [preview, setPreview] = useState<BackendPreviewResponse | null>(null)
   const [failed, setFailed] = useState(false)
   const [selectedTab, setSelectedTab] = useState('')
+  // 완료 화면과 '지난 변환 미리보기' 창에 동시에 뜰 수 있어서 id가 겹치지 않게 한다.
+  const uid = useId()
   const dialogRef = useRef<HTMLDialogElement | null>(null)
   const zoomButtonRef = useRef<HTMLButtonElement | null>(null)
 
@@ -44,7 +46,7 @@ function FilePreview({ fileId }: FilePreviewProps) {
   const unit = preview?.file_type === 'pptx' ? '슬라이드' : '페이지'
   const tabs = pages.map((page) => `${page.page_number}`)
   const { getTabProps, panelProps } = useTabs({
-    idPrefix: 'file-preview',
+    idPrefix: `file-preview${uid}`,
     tabs,
     selected: selectedTab,
     onSelect: setSelectedTab,
@@ -71,8 +73,8 @@ function FilePreview({ fileId }: FilePreviewProps) {
   const paragraphs = page.paragraphs.filter((paragraph) => paragraph.text.trim() !== '')
 
   return (
-    <section className="file-preview" aria-labelledby="file-preview-title">
-      <h4 id="file-preview-title" className="file-preview-title">
+    <section className="file-preview" aria-labelledby={`${uid}-title`}>
+      <h4 id={`${uid}-title`} className="file-preview-title">
         미리보기 <span className="file-preview-title-sub">앞 {pages.length}{unit}</span>
       </h4>
 
@@ -126,14 +128,14 @@ function FilePreview({ fileId }: FilePreviewProps) {
         <dialog
           ref={dialogRef}
           className="file-preview-dialog"
-          aria-labelledby="file-preview-dialog-title"
+          aria-labelledby={`${uid}-dialog-title`}
           onClick={(event) => {
             if (event.target === dialogRef.current) dialogRef.current?.close()
           }}
           onClose={() => zoomButtonRef.current?.focus()}
         >
           <div className="file-preview-dialog-head">
-            <h2 id="file-preview-dialog-title" className="file-preview-dialog-title">
+            <h2 id={`${uid}-dialog-title`} className="file-preview-dialog-title">
               원본 {page.page_number}
               {unit === '페이지' ? '페이지' : '번 슬라이드'}
             </h2>
