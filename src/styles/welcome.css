@@ -1431,21 +1431,13 @@
   line-height: 1.1;
 }
 
-/* 옅은 색 로고(Gemma)도 바탕과 섞이지 않게 흰 칸에 올린다 */
-.process-logo-icon,
-.process-logo-wide {
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  background-color: #ffffff;
-}
-
 .process-logo-icon {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
 }
 
 .process-logo-wide {
-  width: 116px;
+  width: 132px;
   height: auto;
 }
 
