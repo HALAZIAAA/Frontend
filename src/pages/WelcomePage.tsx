@@ -27,10 +27,6 @@ function WelcomePage() {
             처음부터 쓰지 않고 검수부터 시작할 수 있어요.
           </p>
           <div className="welcome-hero-actions">
-            <Link to="/" className="welcome-primary-button">
-              파일 변환 시작하기
-              <ArrowRightIcon aria-hidden="true" size={18} />
-            </Link>
             <a href="#welcome-features" className="welcome-secondary-button">
               기능 둘러보기
             </a>
