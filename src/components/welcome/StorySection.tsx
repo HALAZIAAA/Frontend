@@ -21,8 +21,8 @@ import {
   TextAlignLeftIcon,
   TextTIcon,
 } from '@phosphor-icons/react'
-// 로고 출처: 위키미디어 공용 File:Qwen_Logo.svg(Alibaba Cloud), File:Gemma_icon.png(Google DeepMind). 둘 다 Apache License 2.0
-import qwenLogo from '../../assets/welcome/qwen-logo.svg'
+// 로고: Qwen3.5 로고(Alibaba Cloud Qwen 팀, 팀원이 준 이미지. 라이선스 미확인), Gemma는 위키미디어 공용 File:Gemma_icon.png(Google DeepMind, Apache License 2.0)
+import qwenLogo from '../../assets/welcome/qwen35-logo.png'
 import gemmaIcon from '../../assets/welcome/gemma-icon.png'
 
 type Milestone = {
@@ -335,8 +335,8 @@ function StorySection() {
         ))}
 
         <p className="welcome-credit">
-          로고: Qwen(Alibaba Cloud), Gemma(Google DeepMind). 둘 다 Apache License 2.0으로 위키미디어 공용에 올라온 것을 썼고, 각
-          회사의 상표예요. 어떤 모델을 썼는지 알리는 용도로만 넣었어요.
+          로고: Qwen3.5(Alibaba Cloud), Gemma(Google DeepMind, Apache License 2.0, 위키미디어 공용). 각 회사의 상표이며 어떤
+          모델을 썼는지 알리는 용도로만 넣었어요.
         </p>
       </div>
     </section>
