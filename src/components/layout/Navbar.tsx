@@ -11,6 +11,7 @@ const MENU_ITEMS: Array<{ label: string; path: string }> = [
   { label: '커뮤니티', path: '/community' },
   { label: '채용공고', path: '/jobs' },
   { label: '마이페이지', path: '/mypage' },
+  { label: '소개', path: '/welcome' },
 ]
 const ADMIN_MENU_ITEM = { label: '관리자', path: '/admin' }
 
