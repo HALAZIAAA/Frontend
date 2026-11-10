@@ -1,5 +1,6 @@
 import HomePage from './pages/HomePage'
 import WelcomePage from './pages/WelcomePage'
+import ExamplesPage from './pages/ExamplesPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import MyPage from './pages/MyPage'
@@ -19,6 +20,7 @@ function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/welcome" element={<WelcomePage />} />
+      <Route path="/examples" element={<ExamplesPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
