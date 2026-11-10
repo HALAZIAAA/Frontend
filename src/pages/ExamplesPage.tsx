@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { ArrowSquareOutIcon, DownloadSimpleIcon } from '@phosphor-icons/react'
+import { ArrowSquareOutIcon } from '@phosphor-icons/react'
 import Navbar from '../components/layout/Navbar'
 import TxtView from '../components/welcome/TxtView'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { useTabs } from '../lib/useTabs'
 import draftTxt from '../assets/examples/lecture-10.draft.txt?raw'
 import reviewedTxt from '../assets/examples/lecture-10.reviewed.txt?raw'
-import reviewedTxtUrl from '../assets/examples/lecture-10.reviewed.txt?url'
 import '../styles/navbar.css'
 import '../styles/welcome.css'
 import '../styles/examples.css'
@@ -133,22 +132,10 @@ function ExamplesPage() {
 
       <main className="page-container examples-main">
         <section aria-labelledby="examples-title">
-          <div className="welcome-section-head">
-            <p className="welcome-eyebrow">실제 변환 결과</p>
-            <h1 id="examples-title" className="welcome-section-title">
-              주제별 변환 예시
-            </h1>
-            <p className="welcome-section-description">
-              예시 강의자료 10쪽(5개 주제, 주제마다 2장)을 BridgeOn 데스크톱 앱 Beta 1.1로 변환했어요. 앱이 만든 초안을
-              원본과 대조해 순서, 빠진 수식, 표, 그림 설명을 보완한 결과를 먼저 보여 드리고, 고치기 전의 앱 초안도 함께 볼
-              수 있어요.
-            </p>
-            <p className="examples-meta">2026년 11월 10일 변환 · PDF 10쪽 · 그림 12개 설명 · 초안 변환에 21초</p>
-            <a className="welcome-text-link" href={reviewedTxtUrl} download="강의자료_10장_합본_보완본.txt">
-              <DownloadSimpleIcon aria-hidden="true" size={18} />
-              보완본 TXT 전체 받기
-            </a>
-          </div>
+          {/* 화면에는 보이지 않는 제목. 스크린리더가 화면 이름을 알 수 있게 남겨 둔다. */}
+          <h1 id="examples-title" className="examples-sr-only">
+            주제별 변환 예시
+          </h1>
 
           <div className="welcome-feature-tabs" role="tablist" aria-label="주제">
             {SUBJECTS.map(({ id, label }, index) => (

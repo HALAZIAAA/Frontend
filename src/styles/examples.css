@@ -3,12 +3,6 @@
   padding-block: 3rem 4.5rem;
 }
 
-.examples-meta {
-  margin: 0.5rem 0 0;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-}
-
 /* 원본과 결과를 나란히 놓는 틀. 틀 너비에 따라 demo-compare가 한 줄/두 줄로 바뀐다. */
 .examples-panel {
   container-type: inline-size;
