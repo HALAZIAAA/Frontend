@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ArrowSquareOutIcon } from '@phosphor-icons/react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowSquareOutIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
 import Navbar from '../components/layout/Navbar'
 import TxtView from '../components/welcome/TxtView'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -90,6 +90,79 @@ const SUBJECTS: Subject[] = [
 
 const SUBJECT_IDS = SUBJECTS.map((subject) => subject.id)
 
+// 변환 결과를 원본 그림과 같은 크기의 칸에 넣고, 넘치는 글은 이전·다음 버튼으로 넘겨 본다.
+// 글을 CSS 단(column)으로 옆으로 흘려 두고 한 단씩 보여 주므로 줄이 중간에 잘리지 않는다.
+// 가려진 단도 문서에는 그대로 있어서 스크린리더는 넘기지 않아도 전체를 읽는다.
+function PagedTxt({ lines }: { lines: string[] }) {
+  const boxRef = useRef<HTMLDivElement>(null)
+  const [part, setPart] = useState(0)
+  const [partCount, setPartCount] = useState(1)
+
+  useEffect(() => {
+    const pre = boxRef.current?.querySelector('pre')
+    if (!pre) return
+    // 칸 크기나 글자 크기가 바뀌면 몇 부분으로 나뉘는지 다시 세고, 보던 곳과 가장 가까운 부분에 맞춘다.
+    const measure = () => {
+      const count = Math.max(1, Math.round(pre.scrollWidth / pre.clientWidth))
+      const current = Math.min(count - 1, Math.round(pre.scrollLeft / pre.clientWidth))
+      pre.scrollLeft = current * pre.clientWidth
+      setPartCount(count)
+      setPart(current)
+    }
+    const resizeObserver = new ResizeObserver(measure)
+    resizeObserver.observe(pre)
+    const textSizeObserver = new MutationObserver(measure)
+    textSizeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-text-size'] })
+    void document.fonts.ready.then(measure)
+    return () => {
+      resizeObserver.disconnect()
+      textSizeObserver.disconnect()
+    }
+  }, [])
+
+  const show = (next: number) => {
+    const pre = boxRef.current?.querySelector('pre')
+    if (!pre) return
+    pre.scrollLeft = next * pre.clientWidth
+    setPart(next)
+  }
+
+  return (
+    <>
+      <div className="examples-result" ref={boxRef}>
+        <TxtView lines={lines} />
+      </div>
+      {partCount > 1 && (
+        <div className="examples-pager">
+          <button
+            type="button"
+            className="demo-chip"
+            aria-label="변환 결과 이전 부분"
+            disabled={part === 0}
+            onClick={() => show(part - 1)}
+          >
+            <CaretLeftIcon aria-hidden="true" size={16} weight="bold" />
+            이전
+          </button>
+          <span className="examples-pager-count" aria-live="polite">
+            {part + 1} / {partCount}
+          </span>
+          <button
+            type="button"
+            className="demo-chip"
+            aria-label="변환 결과 다음 부분"
+            disabled={part >= partCount - 1}
+            onClick={() => show(part + 1)}
+          >
+            다음
+            <CaretRightIcon aria-hidden="true" size={16} weight="bold" />
+          </button>
+        </div>
+      )}
+    </>
+  )
+}
+
 // 예시 강의자료를 실제로 변환한 결과를 주제별로 원본과 나란히 보여 주는 화면.
 function ExamplesPage() {
   useDocumentTitle('변환 예시')
@@ -170,7 +243,8 @@ function ExamplesPage() {
               </div>
               <div className="demo-compare-col">
                 <p className="demo-col-label">변환 결과 (TXT)</p>
-                <TxtView lines={RESULT_PAGES[chapter.page - 1] ?? []} />
+                {/* 장을 바꾸면 새로 그려서 첫 부분부터 다시 보여 준다. */}
+                <PagedTxt key={chapter.page} lines={RESULT_PAGES[chapter.page - 1] ?? []} />
               </div>
             </div>
           </div>

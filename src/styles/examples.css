@@ -1,5 +1,7 @@
 /* 변환 예시(/examples) 화면. 탭·칩·원본/결과 나란히 보기는 welcome.css의 것을 그대로 쓴다. */
-.examples-main {
+/* 원본 그림을 크게 보여 주려고 다른 화면보다 넓게 쓴다. */
+.page-container.examples-main {
+  max-width: 1560px;
   padding-block: 3rem 4.5rem;
 }
 
@@ -20,11 +22,60 @@
 
 .examples-image {
   display: block;
+  box-sizing: border-box;
   width: 100%;
   height: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background-color: #ffffff;
+}
+
+/* 변환 결과 칸. 원본과 나란히 놓일 때는 원본 그림(16:9)과 같은 크기로 맞추고,
+   넘치는 글은 옆 단으로 흘려 두었다가 이전·다음 버튼으로 한 단씩 보여 준다.
+   좁은 화면(위아래 배치)에서는 크기를 맞추지 않고 글 전체를 그대로 보여 준다. */
+@container (min-width: 520px) {
+  .examples-result {
+    position: relative;
+    aspect-ratio: 16 / 9;
+  }
+
+  .examples-result .demo-txt {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    column-count: 1;
+    column-fill: auto;
+    /* 좌우 안쪽 여백(14px × 2)과 같아야 한 번에 정확히 한 단씩 넘어간다 */
+    column-gap: 28px;
+  }
+}
+
+.examples-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.examples-pager .demo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.examples-pager .demo-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.examples-pager-count {
+  min-width: 3.5em;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: center;
 }
 
 /* 화면에는 안 보이고 스크린리더만 읽는 글 */
