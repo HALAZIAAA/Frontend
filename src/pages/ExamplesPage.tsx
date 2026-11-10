@@ -4,8 +4,7 @@ import Navbar from '../components/layout/Navbar'
 import TxtView from '../components/welcome/TxtView'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { useTabs } from '../lib/useTabs'
-import draftTxt from '../assets/examples/lecture-10.draft.txt?raw'
-import reviewedTxt from '../assets/examples/lecture-10.reviewed.txt?raw'
+import resultTxt from '../assets/examples/lecture-10.txt?raw'
 import '../styles/navbar.css'
 import '../styles/welcome.css'
 import '../styles/examples.css'
@@ -18,26 +17,16 @@ const PAGE_IMAGES = Object.entries(
   .map(([, url]) => url)
 
 // 변환 결과 TXT를 쪽 표시(@@p1) 기준으로 쪽마다 나눈다.
-function splitPages(txt: string): string[][] {
-  const pages: string[][] = []
-  for (const line of txt.replace(/\r\n/g, '\n').trimEnd().split('\n')) {
-    if (/^\s*@@p\d+$/.test(line)) pages.push([])
-    pages.at(-1)?.push(line)
-  }
-  return pages
+// 이 TXT는 bridgeonit Beta 1.1이 만든 초안을 원본과 대조해 보완한 것이다.
+const RESULT_PAGES: string[][] = []
+for (const line of resultTxt.replace(/\r\n/g, '\n').trimEnd().split('\n')) {
+  if (/^\s*@@p\d+$/.test(line)) RESULT_PAGES.push([])
+  RESULT_PAGES.at(-1)?.push(line)
 }
-
-type VersionId = 'reviewed' | 'draft'
-
-// reviewed: 앱 초안을 원본과 대조해 보완한 것. draft: bridgeonit Beta 1.1이 만든 그대로(고치지 않음).
-const VERSIONS: Array<{ id: VersionId; label: string; pages: string[][] }> = [
-  { id: 'reviewed', label: '보완본', pages: splitPages(reviewedTxt) },
-  { id: 'draft', label: '앱 초안 그대로', pages: splitPages(draftTxt) },
-]
 
 // 쪽 제목: 결과 TXT에서 8칸 들여 쓴 첫 줄
 function titleOf(pageNumber: number): string {
-  const lines = VERSIONS[0].pages[pageNumber - 1] ?? []
+  const lines = RESULT_PAGES[pageNumber - 1] ?? []
   return lines.find((line) => line.startsWith('        '))?.trim() ?? `${pageNumber}쪽`
 }
 
@@ -106,7 +95,6 @@ function ExamplesPage() {
   useDocumentTitle('변환 예시')
   const [subjectId, setSubjectId] = useState<SubjectId>('electronics')
   const [chapterIndex, setChapterIndex] = useState(0)
-  const [versionId, setVersionId] = useState<VersionId>('reviewed')
 
   const selectSubject = (id: SubjectId) => {
     setSubjectId(id)
@@ -124,7 +112,6 @@ function ExamplesPage() {
   const chapter = subject.chapters[chapterIndex] ?? subject.chapters[0]
   const title = titleOf(chapter.page)
   const image = PAGE_IMAGES[chapter.page - 1]
-  const version = VERSIONS.find((item) => item.id === versionId) ?? VERSIONS[0]
 
   return (
     <div className="welcome-wrapper">
@@ -182,21 +169,8 @@ function ExamplesPage() {
                 </a>
               </div>
               <div className="demo-compare-col">
-                <p className="demo-col-label">변환 결과 (TXT) · {version.label}</p>
-                <div className="demo-chip-row" role="group" aria-label="변환 결과 종류">
-                  {VERSIONS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className="demo-chip"
-                      aria-pressed={item.id === versionId}
-                      onClick={() => setVersionId(item.id)}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-                <TxtView lines={version.pages[chapter.page - 1] ?? []} />
+                <p className="demo-col-label">변환 결과 (TXT)</p>
+                <TxtView lines={RESULT_PAGES[chapter.page - 1] ?? []} />
               </div>
             </div>
           </div>
