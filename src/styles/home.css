@@ -816,20 +816,7 @@
 }
 
 .error-user-message {
-  margin-bottom: 0.45rem;
-}
-
-.error-detail-message {
-  margin: 0 0 1rem;
-  width: 100%;
-  max-width: 32rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: var(--radius-sm);
-  background-color: #fff1f2;
-  color: #991b1b;
-  font-size: var(--text-sm);
-  line-height: 1.45;
-  word-break: break-word;
+  margin-bottom: 1rem;
 }
 
 @keyframes spin {

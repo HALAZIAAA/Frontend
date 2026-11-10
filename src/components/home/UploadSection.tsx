@@ -1132,7 +1132,6 @@ function UploadSection() {
             <p className="upload-box-support-text error-user-message">
               {conversionState.errorUserMessage || '변환 중 문제가 발생했습니다. 다시 시도해주세요.'}
             </p>
-            <p className="error-detail-message">{conversionState.errorMessage}</p>
 
             <div className="selected-action-row">
               <button
