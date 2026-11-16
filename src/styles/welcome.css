@@ -1374,8 +1374,7 @@
 }
 
 /* 그림 칸 속 요소 */
-.process-tile,
-.process-logo {
+.process-tile {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -1431,26 +1430,6 @@
   line-height: 1.1;
 }
 
-.process-logo-icon {
-  width: 48px;
-  height: 48px;
-}
-
-.process-logo-wide {
-  width: 132px;
-  height: auto;
-}
-
-.process-logo.is-picked .process-tile-label {
-  color: #166534;
-}
-
-.process-vs {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  font-weight: 700;
-}
-
 .process-indent {
   display: inline-flex;
   flex-direction: column;
@@ -1462,13 +1441,6 @@
   font-size: var(--text-xs);
   font-weight: 600;
   white-space: pre;
-}
-
-.welcome-credit {
-  margin: 1.25rem 0 0;
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  line-height: 1.6;
 }
 
 /* ── 변환 과정 ── */

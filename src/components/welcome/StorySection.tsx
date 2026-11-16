@@ -21,9 +21,6 @@ import {
   TextAlignLeftIcon,
   TextTIcon,
 } from '@phosphor-icons/react'
-// 로고: Qwen3.5 로고(Alibaba Cloud Qwen 팀, 팀원이 준 이미지. 라이선스 미확인), Gemma는 위키미디어 공용 File:Gemma_icon.png(Google DeepMind, Apache License 2.0)
-import qwenLogo from '../../assets/welcome/qwen35-logo.png'
-import gemmaIcon from '../../assets/welcome/gemma-icon.png'
 
 type Milestone = {
   when: string
@@ -83,7 +80,7 @@ const YEARS: Array<{ year: string; tone: 'early' | 'build'; items: Milestone[] }
         dateTime: '2025-11-04',
         title: 'AI 실험과 중간 발표',
         description:
-          '한국어에 강점을 가진 오픈소스 VLM으로 글, 사진, 표, 복잡한 그림, 그래프가 든 강의자료 5가지를 직접 돌려 보고 결과를 발표했어요. 복잡한 그림 설명과 한 페이지에 1~10분 걸리는 속도가 다음 과제로 남았어요.',
+          '글, 사진, 표, 복잡한 그림, 그래프가 든 강의자료 5가지를 변환해 결과를 발표했어요. 복잡한 그림 설명과 한 페이지에 1~10분 걸리는 속도가 다음 과제로 남았어요.',
         visual: (
           <span className="process-tile-row">
             <Tile icon={<TextTIcon size={22} />} label="글" />
@@ -105,20 +102,12 @@ const YEARS: Array<{ year: string; tone: 'early' | 'build'; items: Milestone[] }
         dateTime: '2026-04',
         title: '그림 설명 모델 고르기',
         description:
-          '정답을 먼저 만들어 두고, Gemma와 Qwen 같은 오픈소스 시각 언어 모델(VLM)을 같은 그림으로 비교해 Qwen을 골랐어요.',
+          '같은 그림을 여러 모델로 설명하게 한 뒤, 미리 작성한 정답과 비교해 추가 학습에 쓸 모델을 골랐어요.',
         visual: (
           <>
-            <span className="process-logo">
-              <img src={gemmaIcon} alt="" className="process-logo-icon" />
-              <span className="process-tile-label">Gemma</span>
-            </span>
-            <span className="process-vs">vs</span>
-            <span className="process-logo is-picked">
-              <img src={qwenLogo} alt="" className="process-logo-wide" />
-              <span className="process-tile-label">
-                <CheckCircleIcon size={16} weight="fill" /> 채택
-              </span>
-            </span>
+            <Tile icon={<ChatTextIcon size={34} />} label="설명 비교" />
+            <Arrow />
+            <Tile icon={<CheckCircleIcon size={34} />} label="모델 선정" />
           </>
         ),
       },
@@ -126,15 +115,12 @@ const YEARS: Array<{ year: string; tone: 'early' | 'build'; items: Milestone[] }
         when: '2026년 5~6월',
         dateTime: '2026-05',
         title: '그림 설명 모델 추가 학습',
-        description: '고른 Qwen 모델을 공개 데이터의 그림·표 자료로 더 학습시키고, 평가용 자료는 학습에서 빼 두었어요.',
+        description: '공개 데이터에서 그림과 표를 골라 추가 학습에 썼어요. 평가용 자료는 따로 보관했어요.',
         visual: (
           <>
             <Tile icon={<DatabaseIcon size={34} />} label="공개 데이터" />
             <Arrow />
-            <span className="process-logo">
-              <img src={qwenLogo} alt="" className="process-logo-wide" />
-              <span className="process-tile-label">추가 학습</span>
-            </span>
+            <Tile icon={<GraduationCapIcon size={34} />} label="추가 학습" />
           </>
         ),
       },
@@ -333,11 +319,6 @@ function StorySection() {
             </ol>
           </div>
         ))}
-
-        <p className="welcome-credit">
-          로고: Qwen3.5(Alibaba Cloud), Gemma(Google DeepMind, Apache License 2.0, 위키미디어 공용). 각 회사의 상표이며 어떤
-          모델을 썼는지 알리는 용도로만 넣었어요.
-        </p>
       </div>
     </section>
   )
