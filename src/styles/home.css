@@ -483,6 +483,14 @@
   font-size: var(--text-sm);
 }
 
+/* 100MB를 넘는 파일을 골랐을 때의 빨간 안내 */
+.selected-file-oversize {
+  margin: 4px 0 0;
+  color: #b91c1c;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
 .selected-file-notes {
   grid-column: 2;
   list-style: none;
@@ -877,33 +885,6 @@
 .docx-download-button {
   font-size: var(--text-xs);
   font-weight: 700;
-}
-
-.conversion-warning-box {
-  margin: 0 0 1rem;
-  width: 100%;
-  max-width: 32rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: var(--radius-sm);
-  background-color: #fffbeb;
-  border: 1px solid #fcd34d;
-  color: #92400e;
-  font-size: var(--text-sm);
-  text-align: left;
-}
-
-.conversion-warning-title {
-  margin: 0 0 0.35rem;
-  font-weight: 700;
-}
-
-.conversion-warning-list {
-  margin: 0;
-  padding-left: 1.1rem;
-}
-
-.conversion-warning-list li + li {
-  margin-top: 0.25rem;
 }
 
 /* 파일을 놓을 수 있는 상태: 점선 테두리로 '여기에 놓는 자리'임을 보여준다 */

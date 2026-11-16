@@ -50,7 +50,6 @@ type ConversionState = {
   progress: number
   downloadUrl: string | null
   availableFormats: ResultFileFormat[]
-  warnings: string[]
   startedAtMs: number | null
   speedSample: SpeedSample | null
   remainingSeconds: number | null
@@ -70,7 +69,6 @@ type PersistedConversionState = {
   progress: number
   downloadUrl: string | null
   availableFormats: ResultFileFormat[]
-  warnings: string[]
   startedAtMs: number | null
   errorMessage: string
   errorUserMessage: string
@@ -86,7 +84,6 @@ const DEFAULT_STATE: ConversionState = {
   progress: 0,
   downloadUrl: null,
   availableFormats: [],
-  warnings: [],
   startedAtMs: null,
   speedSample: null,
   remainingSeconds: null,
@@ -124,6 +121,10 @@ function getStageLabel(stage: BackendFileStage): string {
 }
 
 const ACCEPTED_EXTENSIONS = ['pdf', 'pptx']
+
+// 백엔드 업로드 제한(MAX_UPLOAD_SIZE_MB 기본값 100)과 같은 값. 넘는 파일은 올리기 전에 막는다.
+const MAX_UPLOAD_MB = 100
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 
 function extensionOf(fileName: string): string {
   return fileName.split('.').pop()?.toLowerCase() ?? ''
@@ -383,7 +384,6 @@ function toPersistedState(state: ConversionState): PersistedConversionState {
     progress: state.progress,
     downloadUrl: state.downloadUrl,
     availableFormats: state.availableFormats,
-    warnings: state.warnings,
     startedAtMs: state.startedAtMs,
     errorMessage: state.errorMessage,
     errorUserMessage: state.errorUserMessage,
@@ -413,7 +413,6 @@ function toConversionStateFromPersisted(persisted: PersistedConversionState): Co
     progress: persisted.progress,
     downloadUrl: persisted.downloadUrl,
     availableFormats: persisted.availableFormats ?? RESULT_FORMATS,
-    warnings: persisted.warnings ?? [],
     // 새로고침 뒤에도 같은 시작 시각을 써야 남은 시간이 이어진다.
     startedAtMs: persisted.startedAtMs ?? null,
     errorMessage: persisted.errorMessage,
@@ -562,7 +561,6 @@ function UploadSection() {
               progress: 100,
               downloadUrl: response.download_url,
               availableFormats: response.available_formats ?? RESULT_FORMATS,
-              warnings: response.warnings ?? [],
               speedSample: null,
               remainingSeconds: null,
               errorMessage: '',
@@ -704,8 +702,10 @@ function UploadSection() {
     selectFile(droppedFile)
   }
 
+  const isOversize = conversionState.fileSize > MAX_UPLOAD_BYTES
+
   const handleStartConversion = async (): Promise<void> => {
-    if (!conversionState.selectedFile || conversionState.isSubmitting) return
+    if (!conversionState.selectedFile || conversionState.isSubmitting || isOversize) return
 
     setConversionState((prevState) => ({
       ...prevState,
@@ -941,6 +941,12 @@ function UploadSection() {
                   {extensionOf(conversionState.fileName).toUpperCase()}{' '}
                   {formatFileSize(conversionState.fileSize)}
                 </p>
+                {/* role="alert": 큰 파일을 고르자마자 스크린리더가 읽어 준다 */}
+                {isOversize && (
+                  <p id="selected-file-oversize" className="selected-file-oversize" role="alert">
+                    용량 초과 · {MAX_UPLOAD_MB}MB 이하 파일만 변환할 수 있어요
+                  </p>
+                )}
               </div>
 
               <ul className="selected-file-notes" role="list">
@@ -978,7 +984,8 @@ function UploadSection() {
                 onClick={() => {
                   void handleStartConversion()
                 }}
-                disabled={conversionState.isSubmitting}
+                disabled={conversionState.isSubmitting || isOversize}
+                aria-describedby={isOversize ? 'selected-file-oversize' : undefined}
               >
                 {conversionState.isSubmitting ? '업로드 중...' : '변환 시작'}
                 {!conversionState.isSubmitting && <ArrowRightIcon aria-hidden="true" size={20} />}
@@ -1077,17 +1084,6 @@ function UploadSection() {
                 ? '파일이 성공적으로 변환되었습니다'
                 : 'DOCX 파일을 만들지 못했습니다. TXT 파일만 받을 수 있습니다.'}
             </p>
-
-            {conversionState.warnings.length > 0 && (
-              <div className="conversion-warning-box" role="status">
-                <p className="conversion-warning-title">확인 필요</p>
-                <ul className="conversion-warning-list">
-                  {conversionState.warnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
 
             {conversionState.fileId && <FilePreview fileId={conversionState.fileId} />}
 
