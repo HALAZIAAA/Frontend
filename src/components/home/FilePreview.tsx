@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { MagnifyingGlassPlusIcon, XIcon } from '@phosphor-icons/react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { CaretLeftIcon, CaretRightIcon, MagnifyingGlassPlusIcon, XIcon } from '@phosphor-icons/react'
 import { getFilePreview } from '../../api/fileApi'
 import { useTabs } from '../../lib/useTabs'
 import type { BackendPreviewParagraph, BackendPreviewResponse } from '../../types/fileConverter'
@@ -14,6 +14,83 @@ function paragraphClass(paragraph: BackendPreviewParagraph): string {
   if (paragraph.heading_level) return 'file-preview-heading'
   if (paragraph.list_level !== null) return `file-preview-list level-${Math.min(paragraph.list_level, 3)}`
   return 'file-preview-paragraph'
+}
+
+// 변환 결과를 원본 그림과 같은 높이의 칸에 넣고, 넘치는 글은 이전·다음 버튼으로 넘겨 본다.
+// 글을 CSS 단(column)으로 옆으로 흘려 두고 한 단씩 보여 주므로 줄이 중간에 잘리지 않는다.
+// 가려진 단도 문서에는 그대로 있어서 스크린리더는 넘기지 않아도 전체를 읽는다.
+// 좁은 화면이나 원본 그림이 없을 때는 단을 나누지 않으므로(CSS) 글 전체가 그대로 보이고 버튼도 없다.
+function PagedResult({ children }: { children: ReactNode }) {
+  const boxRef = useRef<HTMLDivElement>(null)
+  const [part, setPart] = useState(0)
+  const [partCount, setPartCount] = useState(1)
+
+  useEffect(() => {
+    const box = boxRef.current
+    if (!box) return
+    // 칸 크기나 글자 크기가 바뀌면 몇 부분으로 나뉘는지 다시 세고, 보던 곳과 가장 가까운 부분에 맞춘다.
+    const measure = () => {
+      if (box.clientWidth === 0) return
+      const count = Math.max(1, Math.round(box.scrollWidth / box.clientWidth))
+      const current = Math.min(count - 1, Math.round(box.scrollLeft / box.clientWidth))
+      box.scrollLeft = current * box.clientWidth
+      setPartCount(count)
+      setPart(current)
+    }
+    const resizeObserver = new ResizeObserver(measure)
+    resizeObserver.observe(box)
+    const textSizeObserver = new MutationObserver(measure)
+    textSizeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-text-size'] })
+    void document.fonts.ready.then(measure)
+    return () => {
+      resizeObserver.disconnect()
+      textSizeObserver.disconnect()
+    }
+  }, [])
+
+  const show = (next: number) => {
+    const box = boxRef.current
+    if (!box) return
+    box.scrollLeft = next * box.clientWidth
+    setPart(next)
+  }
+
+  return (
+    <>
+      <div className="file-preview-result-frame">
+        <div className="file-preview-result" ref={boxRef}>
+          {children}
+        </div>
+      </div>
+      {partCount > 1 && (
+        <div className="file-preview-pager">
+          <button
+            type="button"
+            className="file-preview-pager-button"
+            aria-label="변환 결과 이전 부분"
+            disabled={part === 0}
+            onClick={() => show(part - 1)}
+          >
+            <CaretLeftIcon aria-hidden="true" size={16} weight="bold" />
+            이전
+          </button>
+          <span className="file-preview-pager-count" aria-live="polite">
+            {part + 1} / {partCount}
+          </span>
+          <button
+            type="button"
+            className="file-preview-pager-button"
+            aria-label="변환 결과 다음 부분"
+            disabled={part >= partCount - 1}
+            onClick={() => show(part + 1)}
+          >
+            다음
+            <CaretRightIcon aria-hidden="true" size={16} weight="bold" />
+          </button>
+        </div>
+      )}
+    </>
+  )
 }
 
 // 변환 완료 화면의 앞 몇 페이지 미리보기. 한 번에 한 페이지씩, 원본과 결과를 나란히 보여 준다.
@@ -86,8 +163,8 @@ function FilePreview({ fileId }: FilePreviewProps) {
         ))}
       </div>
 
-      <div className="file-preview-panel" {...panelProps}>
-        <div className="file-preview-original">
+      <div className={page.image_url ? 'file-preview-panel has-image' : 'file-preview-panel'} {...panelProps}>
+        <div className="file-preview-column">
           <p className="file-preview-label">{preview.file_type === 'pptx' ? '원본 속 그림' : '원본'}</p>
           {page.image_url ? (
             <>
@@ -107,18 +184,21 @@ function FilePreview({ fileId }: FilePreviewProps) {
           )}
         </div>
 
-        <div className="file-preview-result">
+        <div className="file-preview-column">
           <p className="file-preview-label">변환 결과</p>
-          {paragraphs.length > 0 ? (
-            paragraphs.map((paragraph, index) => (
-              <p key={index} className={paragraphClass(paragraph)}>
-                {paragraph.list_marker ? `${paragraph.list_marker} ` : ''}
-                {paragraph.text}
-              </p>
-            ))
-          ) : (
-            <p className="file-preview-message">이 {unit}에서 나온 내용이 없어요.</p>
-          )}
+          {/* 페이지를 바꾸면 새로 그려서 첫 부분부터 다시 보여 준다. */}
+          <PagedResult key={page.page_number}>
+            {paragraphs.length > 0 ? (
+              paragraphs.map((paragraph, index) => (
+                <p key={index} className={paragraphClass(paragraph)}>
+                  {paragraph.list_marker ? `${paragraph.list_marker} ` : ''}
+                  {paragraph.text}
+                </p>
+              ))
+            ) : (
+              <p className="file-preview-message">이 {unit}에서 나온 내용이 없어요.</p>
+            )}
+          </PagedResult>
         </div>
       </div>
 
