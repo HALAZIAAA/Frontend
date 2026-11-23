@@ -497,12 +497,19 @@
   }
 }
 
-/* 아주 좁은 화면: 메뉴 4개가 한 줄에 다 들어가지 않는다. 3+1로 어색하게 넘어가지 않게 2칸씩 두 줄로 나눈다. */
-@media (max-width: 400px) {
+/* 휴대폰: 메뉴가 화면 위쪽을 계속 가리지 않게 고정을 푼다. 메뉴는 화면 맨 위에 그대로 있고 스크롤하면 함께 올라간다. */
+@media (max-width: 480px) {
+  .navbar-wrapper {
+    position: static;
+  }
+}
+
+/* 좁은 휴대폰: 메뉴 5~6개가 한 줄에 다 들어가지 않는다. 4+1로 하나만 넘어가지 않게 3칸씩 두 줄(3+2 또는 3+3)로 나눈다. */
+@media (max-width: 430px) {
   .navbar-menu-list {
     display: grid;
-    grid-template-columns: repeat(2, max-content);
-    column-gap: 0.75rem;
+    grid-template-columns: repeat(3, max-content);
+    column-gap: 0.5rem;
     row-gap: 0;
   }
 }

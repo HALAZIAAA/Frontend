@@ -1,13 +1,30 @@
 type Member = {
   name: string
   role: string
+  work: string
   tone: 'green' | 'rose' | 'amber'
 }
 
+// 맡은 일 근거: 각 저장소의 커밋 기록과 개발과정 정리 문서. 깃허브 주소는 싣지 않는다.
 const MEMBERS: Member[] = [
-  { name: '최수민', role: '백엔드', tone: 'amber' },
-  { name: '구병모', role: 'AI 모델', tone: 'green' },
-  { name: '이지현', role: '프론트엔드', tone: 'rose' },
+  {
+    name: '최수민',
+    role: '백엔드',
+    work: '업로드 검증, 변환 파이프라인 뼈대, 오류 처리와 로그, 변환 취소, 24시간 뒤 파일 정리',
+    tone: 'amber',
+  },
+  {
+    name: '구병모',
+    role: 'AI 모델',
+    work: '그림 설명 모델 비교와 추가 학습, 평가 자료 구축, 글자 인식·그림 설명·원고 정리를 하는 AI 서버',
+    tone: 'green',
+  },
+  {
+    name: '이지현',
+    role: '프론트엔드',
+    work: '파일 변환과 미리보기 화면, 커뮤니티와 마이페이지, Google 로그인, 채용공고 수집',
+    tone: 'rose',
+  },
 ]
 
 function TeamSection() {
@@ -31,6 +48,7 @@ function TeamSection() {
             </span>
             <span className="welcome-team-name">{member.name}</span>
             <span className="welcome-team-role">{member.role}</span>
+            <span className="welcome-team-work">{member.work}</span>
           </li>
         ))}
       </ul>
