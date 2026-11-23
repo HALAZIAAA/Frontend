@@ -1291,3 +1291,97 @@
 .recent-preview-body {
   padding: 16px 20px 20px;
 }
+
+/* ── 변환 서버에 연결할 수 없을 때의 안내 ── (components/home/ServerNotice.tsx)
+   색만으로 알리지 않도록 느낌표 아이콘과 문장을 함께 둔다. */
+.server-notice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 12px;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 14px 16px;
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius-md);
+  background-color: #fffbeb;
+  text-align: left;
+}
+
+.server-notice-icon {
+  margin-top: 2px;
+  color: #b45309;
+}
+
+.server-notice-title {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+
+.server-notice-body {
+  margin: 4px 0 0;
+  color: var(--text-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+
+.server-notice-actions {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 4px;
+}
+
+.server-notice-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  color: var(--accent-strong);
+  font-size: var(--text-base);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.server-notice-retry {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text-strong);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.server-notice-retry:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.server-notice-retry:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+html[data-contrast='high'] .server-notice {
+  border-color: var(--border-strong);
+  background-color: #ffffff;
+}
+
+/* 변환 실패 화면 아래의 예시 안내 */
+.upload-example-hint {
+  margin: 1rem 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.upload-example-hint a {
+  color: var(--accent-strong);
+  font-weight: 700;
+}

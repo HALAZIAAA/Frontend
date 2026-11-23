@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   ArrowRightIcon,
   BrowserIcon,
@@ -1143,6 +1144,11 @@ function UploadSection() {
                 새 파일 선택
               </button>
             </div>
+
+            {/* 서버 문제로 계속 실패할 때도 어떤 결과가 나오는지는 볼 수 있게 한다 */}
+            <p className="upload-example-hint">
+              변환이 계속 안 되면 <Link to="/welcome">소개 화면의 예시</Link>에서 어떤 결과가 나오는지 볼 수 있어요.
+            </p>
           </div>
         )}
       </div>

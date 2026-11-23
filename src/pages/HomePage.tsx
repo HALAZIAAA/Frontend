@@ -1,6 +1,7 @@
 import { DownloadSimpleIcon, ScanIcon, UploadSimpleIcon, type Icon } from '@phosphor-icons/react'
 import Navbar from '../components/layout/Navbar'
 import HeroSection from '../components/home/HeroSection'
+import ServerNotice from '../components/home/ServerNotice'
 import UploadSection from '../components/home/UploadSection'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import '../styles/navbar.css'
@@ -40,6 +41,7 @@ function HomePage() {
         />
 
         <div className="home-upload-area">
+          <ServerNotice />
           <UploadSection />
         </div>
 
